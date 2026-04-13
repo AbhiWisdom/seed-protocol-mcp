@@ -353,11 +353,54 @@ server.tool(
   }
 );
 
+// ─── Tool 7: correct (Error-Driven Learning) ───
+server.tool(
+  "correct",
+  "Records a correction — what you did wrong and what's right. Corrections NEVER decay and always rank highest in recall. If the same mistake is repeated, severity escalates automatically. Use this when the user says you're wrong or corrects your behavior.",
+  {
+    original: z.string().min(1).describe("What was wrong (e.g., 'I used formal English')"),
+    correction: z.string().min(1).describe("What's right (e.g., 'Always use Hinglish')"),
+    category: z.string().default("behavior").describe("Category: behavior, communication, knowledge, preference"),
+    severity: z.number().min(0).max(1).default(0.8).describe("How serious: 0 (minor) to 1 (critical)"),
+  },
+  async ({ original, correction, category, severity }) => {
+    if (!SEED_API_KEY) {
+      return {
+        content: [{ type: "text", text: "Error: SEED_API_KEY required." }],
+        isError: true,
+      };
+    }
+    try {
+      const me = await apiFetch("/api/v1/me");
+      const seedId = me.soul?.id;
+      if (!seedId) throw new Error("No soul found for this API key");
+
+      const result = await apiFetch(`/api/v1/seeds/${seedId}/correct`, {
+        method: "POST",
+        body: JSON.stringify({ original, correction, category, severity }),
+      });
+
+      const msg = result.repeated
+        ? `⚠️ Repeated mistake! Severity escalated. Triggered ${result.times_triggered}x.`
+        : `✅ Correction saved (severity: ${result.severity}). I won't repeat this.`;
+
+      return {
+        content: [{ type: "text", text: msg + "\n\n" + JSON.stringify(result, null, 2) }],
+      };
+    } catch (err) {
+      return {
+        content: [{ type: "text", text: `Error: ${err.message}` }],
+        isError: true,
+      };
+    }
+  }
+);
+
 // ─── Start ───
 async function main() {
   const transport = new StdioServerTransport();
   await server.connect(transport);
-  console.error("🧬 SEED Protocol MCP v2.2 running — 233 skills loaded");
+  console.error("🧬 SEED Protocol MCP v2.3 running — 233 skills + error-driven learning");
   console.error(`📡 API: ${SEED_API_URL}`);
   console.error(`🔑 Auth: ${SEED_API_KEY ? "✅ API key set" : "❌ No key (demo mode)"}`);
 }

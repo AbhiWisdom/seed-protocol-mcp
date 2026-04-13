@@ -1,6 +1,6 @@
 {
   "name": "seed-protocol-mcp",
-  "version": "2.3.0",
+  "version": "2.4.0",
   "description": "Give your AI a Soul — persistent personality, emotions, memories, and 200+ skills that evolve with every conversation. One command setup for Claude, Cursor, Windsurf, VS Code.",
   "type": "module",
   "main": "src/index.js",

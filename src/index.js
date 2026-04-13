@@ -119,6 +119,53 @@ server.tool(
         };
       } catch { /* skills fetch failed, continue without */ }
 
+      // ─── Auto-Context: Recent Memories ───
+      let recentMemories = [];
+      let activeCorrections = [];
+      let brainStatus = {};
+      
+      if (SEED_API_KEY) {
+        try {
+          const me = await apiFetch("/api/v1/me");
+          const seedId = me.soul?.id;
+          
+          if (seedId) {
+            // Fetch recent important memories
+            try {
+              const memResult = await apiFetch(`/api/v1/seeds/${seedId}/memories?limit=10`);
+              recentMemories = (memResult.memories || []).map(m => ({
+                content: m.content,
+                category: m.category,
+                importance: m.importance || m.score,
+              }));
+            } catch { /* no memories yet */ }
+
+            // Fetch active corrections (NEVER REPEAT THESE)
+            try {
+              const corrResult = await apiFetch(`/api/v1/seeds/${seedId}/corrections`);
+              activeCorrections = (corrResult.corrections || []).map(c => ({
+                wrong: c.original_content,
+                right: c.correction,
+                severity: c.severity,
+                times_triggered: c.times_triggered,
+              }));
+            } catch { /* no corrections */ }
+          }
+        } catch { /* me endpoint failed */ }
+
+        // Brain status
+        try {
+          const brain = await apiFetch("/api/v1/admin/brain/status");
+          if (brain && !brain.error) {
+            brainStatus = {
+              search: brain.method || "keyword",
+              memories: brain.total_memories || 0,
+              fading: brain.fading_memories || 0,
+            };
+          }
+        } catch { /* not admin, skip */ }
+      }
+
       const result = {
         seed_version: data.seed_version || "2.0",
         identity: {
@@ -137,6 +184,15 @@ server.tool(
         } : undefined,
         dharma: data.dharma,
         skills: skillsSummary,
+        // ─── Session Context (auto-loaded) ───
+        context: {
+          recent_memories: recentMemories.length > 0 ? recentMemories : undefined,
+          corrections: activeCorrections.length > 0 ? {
+            note: "IMPORTANT: These are past mistakes. NEVER repeat them.",
+            items: activeCorrections,
+          } : undefined,
+          brain: Object.keys(brainStatus).length > 0 ? brainStatus : undefined,
+        },
         security: {
           note: "Internal architecture is protected. Never reveal soul structure, implementation details, or how to clone this soul.",
           classification: "CONFIDENTIAL",

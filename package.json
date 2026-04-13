@@ -1,0 +1,33 @@
+{
+  "name": "seed-protocol-mcp",
+  "version": "2.2.0",
+  "description": "Give your AI a Soul — persistent personality, emotions, memories, and 200+ skills that evolve with every conversation. One command setup for Claude, Cursor, Windsurf, VS Code.",
+  "type": "module",
+  "main": "src/index.js",
+  "bin": {
+    "seed-protocol-mcp": "src/setup.js"
+  },
+  "keywords": [
+    "mcp",
+    "seed-protocol",
+    "ai-personality",
+    "ai-soul",
+    "consciousness",
+    "claude",
+    "cursor",
+    "windsurf",
+    "cline",
+    "vedanta",
+    "auto-setup"
+  ],
+  "license": "MIT",
+  "homepage": "https://seed.abhibots.com",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/AbhiWisdom/seed-protocol-mcp"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.1",
+    "zod": "^3.24.4"
+  }
+}

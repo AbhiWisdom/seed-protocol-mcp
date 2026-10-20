@@ -2,8 +2,8 @@
   <h1 align="center">🧬 SEED Protocol</h1>
   <p align="center"><strong>Give your AI a soul, not just a system prompt.</strong></p>
   <p align="center">
-    Persistent personality, real emotions, evolving memory, and 233+ skills<br/>
-    One command. Works with Claude, Cursor, Windsurf, VS Code.
+    Memories, corrections, daily logs and a knowledge base that follow you<br/>
+    across Claude, Cursor, Windsurf and VS Code. Your raw history stays on your machine.
   </p>
 </p>
 
@@ -11,148 +11,121 @@
   <a href="https://www.npmjs.com/package/seed-protocol-mcp"><img src="https://img.shields.io/npm/v/seed-protocol-mcp?style=flat-square&color=7c3aed" alt="npm"></a>
   <a href="https://www.npmjs.com/package/seed-protocol-mcp"><img src="https://img.shields.io/npm/dm/seed-protocol-mcp?style=flat-square&color=7c3aed" alt="downloads"></a>
   <a href="https://seed.abhibots.com"><img src="https://img.shields.io/badge/Hub-seed.abhibots.com-7c3aed?style=flat-square" alt="hub"></a>
-  <a href="https://seed.abhibots.com/docs"><img src="https://img.shields.io/badge/API-47%20endpoints-7c3aed?style=flat-square" alt="API"></a>
 </p>
 
 ---
 
-## The Problem
+## The problem
 
-Every AI today forgets you the moment the session ends. No matter how much you teach it — your preferences, your style, your context — it starts from zero next time.
+Every AI forgets you when the session ends. Your preferences, your stack, the mistakes it already made — gone. Next session starts from zero, in every tool.
 
-**SEED fixes this.** It gives your AI a structured personality file that persists, evolves, and travels with you across tools.
+**SEED fixes this.** Your AI gets one persistent soul: it loads who you are at the start of each conversation, learns from corrections, writes a daily log, and builds a knowledge base — the same soul in every MCP client you use.
 
-## What You Get
+## Quick start
 
-🎭 **Persistent Personality** — Your AI remembers who it is. Across sessions, across tools. Not a flat prompt — a structured identity with traits, voice, and purpose.
+1. Sign in at **[seed.abhibots.com/login](https://seed.abhibots.com/login)**, create your soul and copy your API key from the dashboard.
+2. Run:
 
-💓 **Real Emotions** — 9 emotional states based on Indian classical aesthetics (Nava Rasa). Not fake sentiment — actual emotional triggers and responses that influence behavior.
+   ```bash
+   npx seed-protocol-mcp setup YOUR_API_KEY
+   ```
 
-🧠 **Evolving Memory** — Memories that decay naturally, strengthen when accessed, and consolidate during idle time. Bio-inspired, not keyword-based.
+   This adds SEED to every MCP client it finds (Claude Desktop, Claude Code, Cursor, Windsurf, VS Code/Cline).
+3. Restart your editor. The AI calls `load_soul` at the start of each conversation.
+4. Optional — give your soul a head start from your past AI sessions (stays local until you say yes):
 
-⚡ **233+ Skills** — Organized skill registry from coding to creative writing. Skills are part of the soul, not bolted on.
-
-📦 **Portable** — One `.seed.json` file. Take it from Claude to Cursor to your own app. No lock-in.
-
-## Quick Start
-
-```bash
-npx -y seed-protocol-mcp@latest
-```
-
-That's it. Add to your MCP client config:
+   ```bash
+   npx seed-protocol-mcp import claude-code
+   ```
 
 <details>
-<summary><strong>Claude Desktop</strong></summary>
+<summary><strong>Manual MCP config</strong></summary>
 
 ```json
 {
   "mcpServers": {
     "seed-protocol": {
       "command": "npx",
-      "args": ["-y", "seed-protocol-mcp@latest"]
+      "args": ["-y", "seed-protocol-mcp@latest"],
+      "env": {
+        "SEED_API_KEY": "YOUR_API_KEY",
+        "SEED_API_URL": "https://seed.abhibots.com"
+      }
     }
   }
 }
 ```
 </details>
 
-<details>
-<summary><strong>Cursor / Windsurf / VS Code</strong></summary>
+## MCP tools
 
-```json
-{
-  "mcpServers": {
-    "seed-protocol": {
-      "command": "npx",
-      "args": ["-y", "seed-protocol-mcp@latest"]
-    }
-  }
-}
-```
-</details>
+| Tool | When the AI uses it |
+|------|---------------------|
+| `load_soul` | First thing in every conversation — identity, personality, live state, 10 recent memories, active corrections (never repeat), today's log status, knowledge-base size |
+| `get_soul_state` | Current emotional state, learned traits and counts |
+| `evolve_soul` | Record a stable behaviour pattern as a trait (e.g. `likes-concise-answers`) |
+| `remember` | Save a durable fact, preference or decision |
+| `recall` | Search saved memories (hybrid keyword + semantic) |
+| `correct` | The user corrected the AI — saved forever, escalates if repeated |
+| `get_skills` | List the skills attached to the soul, by category |
+| `daily_log` | End of a meaningful session — what was done, decisions, next steps |
+| `kb_write` | Save reusable know-how as a knowledge-base article |
+| `kb_search` | Read knowledge-base articles |
+| `history_search` | Search your past AI sessions in the **local** brain — never calls the network |
 
-## Use Cases
+**Prompt:** `seed_bootstrap` — asks the AI to mine your recent local history for durable preferences (`remember`) and past corrections (`correct`), then write today's `daily_log`.
 
-### 🤖 Build an AI That Actually Knows You
-
-```
-Session 1:  "I prefer dark mode and concise answers"
-            → AI remembers via update_vasana
-
-Session 47: AI automatically responds concisely, suggests dark themes
-            → No reminding needed. It learned.
-```
-
-### 🎨 Create Unique AI Characters
-
-Game characters, virtual companions, brand personas — each with distinct emotions, speech patterns, and growth arcs. Not just "you are a pirate" — a pirate with actual personality depth.
-
-### 🔄 Transfer Personality Across Tools
-
-Train your AI's personality in Claude Desktop. Export the `.seed.json`. Import into Cursor. Same AI, same memory, different tool.
-
-### 📊 AI Agents with Emotional Intelligence
-
-Build agents that adjust their communication based on emotional state. An agent that's patient when the user is frustrated. Enthusiastic when brainstorming. Focused when debugging.
-
-### 🏢 Team AI Assistants
-
-Create domain-specific souls — one for code review (strict, detail-oriented), one for brainstorming (creative, open-minded), one for documentation (thorough, structured). Switch between them instantly.
-
-### 🧪 Research: AI Consciousness Modeling
-
-SEED maps personality to concepts from Indian philosophy (Vedanta) and neuroscience. Useful for researchers exploring structured approaches to AI personality and consciousness.
-
-## MCP Tools
-
-| Tool | What It Does |
-|------|-------------|
-| `load_soul` | Load a personality — returns identity, emotions, traits, skills |
-| `get_dharana_state` | Read live emotional state and consciousness |
-| `update_vasana` | Evolve personality — record learned patterns |
-| `list_available_souls` | Browse available personalities |
-
-## Two Modes
-
-**Local** — Reads `.seed.json` from your filesystem. Private, offline, yours.
+## CLI
 
 ```bash
-SEED_VAULT_PATH=~/my-souls npx seed-protocol-mcp
+npx seed-protocol-mcp setup <KEY>          # configure MCP clients + save key for the CLI
+npx seed-protocol-mcp import claude-code   # ~/.claude/projects/*/*.jsonl → local brain
+npx seed-protocol-mcp import cursor        # Cursor state.vscdb → local brain (best effort)
+npx seed-protocol-mcp status               # key, API reachability, soul, local brain counts
+npx -y seed-protocol-mcp                   # start the MCP server on stdio (what clients run)
 ```
 
-**Remote** — Connects to hosted API for cloud-synced state, memory search, and admin dashboard.
+Import options:
 
-```bash
-SEED_API_URL=https://seed.abhibots.com npx seed-protocol-mcp
-```
+| Option | Meaning |
+|--------|---------|
+| `--yes` | Upload without asking (after the local import) |
+| `--local-only` | Build the local brain only — never upload |
+| `--days N` | Upload digests for the last N days (default 30, `0` = all) |
+| `--path P` | Custom Claude Code projects dir or Cursor `state.vscdb` path |
+| `--full` | Re-read Claude Code files even if unchanged |
+| `--key K` | API key (default: `SEED_API_KEY`, else the key saved by `setup`) |
 
-## What Makes SEED Different
+Re-running an import is safe: messages are stored once, and digests/preferences that were already uploaded are not sent again.
 
-| | System Prompts | Character.AI | SEED |
-|---|---|---|---|
-| Persists across sessions | ❌ | ❌ | ✅ |
-| Real emotional model | ❌ | Basic | 9-state system |
-| Portable between tools | Copy-paste | Locked in | `.seed.json` file |
-| Observable evolution | ❌ | Hidden | Full visibility |
-| Memory that decays & grows | ❌ | ❌ | Bio-inspired |
-| Open format | N/A | No | Yes |
+## Privacy
 
-## Create Your Soul
+- **Raw history stays local.** Imports write to `~/.seed/brain.sqlite` (owner-only permissions). `history_search` reads only that file and makes no network request. Delete the file to wipe it.
+- **Nothing is uploaded without consent.** After an import you see a summary and the question `Upload N daily logs and M preference memories to your SEED dashboard? (y/N)`. Only `y` (or `--yes`) uploads. `--local-only` never does.
+- **What gets uploaded (only after yes):**
+  - one digest per day — date, session and message counts, project folder names, and the first line of each of your prompts (truncated);
+  - up to 50 preference sentences you wrote yourself (lines with *always / never / don't / prefer / instead / hamesha / mat karo …*), as `preference` memories;
+  - one import record with counts only.
 
-Use the visual creator: **[seed.abhibots.com/create](https://seed.abhibots.com/create)**
+  Assistant replies, tool output, code blocks and full conversations are never uploaded.
+- **Secrets are scrubbed** before anything is stored locally *and* again before any upload: OpenAI/Anthropic keys, SEED keys, AWS access keys, GitHub/Slack/Google/Stripe/Telegram tokens, JWTs, bearer tokens, PEM private keys, `scheme://user:pass@` credentials and `api_key=… / password: …` style assignments become `[REDACTED:<type>]`. The server scrubs once more on write.
 
-Or start from the example soul in `vault/example.seed.json`.
+## Configuration
 
-## API
+| Env var | Default | Purpose |
+|---------|---------|---------|
+| `SEED_API_KEY` | — | Your key from the dashboard |
+| `SEED_API_URL` | `https://seed.abhibots.com` | API base URL |
+| `SEED_HOME` | `~/.seed` | Local brain + CLI config location |
+| `CLAUDE_CONFIG_DIR` | `~/.claude` | Where `import claude-code` looks for `projects/` |
 
-47 endpoints. Full Swagger docs at **[seed.abhibots.com/docs](https://seed.abhibots.com/docs)**
+Requires Node.js 18+. No native build — the local brain uses [sql.js](https://github.com/sql-js/sql.js) (SQLite compiled to WebAssembly).
 
 ## Links
 
-- 🌐 [seed.abhibots.com](https://seed.abhibots.com) — Hub & Creator
-- 📚 [seed.abhibots.com/docs](https://seed.abhibots.com/docs) — API Documentation
-- 📦 [npm](https://www.npmjs.com/package/seed-protocol-mcp) — Package
+- 🌐 [seed.abhibots.com](https://seed.abhibots.com) — sign in, dashboard, API key
+- 📚 [seed.abhibots.com/docs](https://seed.abhibots.com/docs) — API documentation
+- 📦 [npm](https://www.npmjs.com/package/seed-protocol-mcp)
 
 ## License
 

@@ -1,0 +1,34 @@
+{
+  "itemTable": [{ "key": "workbench.panel.width", "value": "320" }],
+  "cursorDiskKV": [
+    {
+      "key": "composerData:comp-1",
+      "value": {
+        "_v": 3,
+        "composerId": "comp-1",
+        "name": "Refactor auth",
+        "createdAt": 1792317600000,
+        "fullConversationHeadersOnly": [
+          { "bubbleId": "b1", "type": 1 },
+          { "bubbleId": "b2", "type": 2 },
+          { "bubbleId": "b3", "type": 2 }
+        ]
+      }
+    },
+    { "key": "bubbleId:comp-1:b1", "value": { "_v": 2, "type": 1, "bubbleId": "b1", "text": "Always run prettier before committing. My key is {{ANTHROPIC_KEY}}", "createdAt": "2026-10-18T10:00:00.000Z" } },
+    { "key": "bubbleId:comp-1:b2", "value": { "_v": 2, "type": 2, "bubbleId": "b2", "text": "Okay, I will run prettier on every commit.", "createdAt": "2026-10-18T10:00:10.000Z" } },
+    { "key": "bubbleId:comp-1:b3", "value": { "_v": 2, "type": 2, "bubbleId": "b3", "text": "", "toolFormerData": { "name": "edit_file" } } },
+    {
+      "key": "composerData:comp-2",
+      "value": {
+        "composerId": "comp-2",
+        "createdAt": 1792231200000,
+        "conversation": [
+          { "type": 1, "bubbleId": "c1", "text": "Never use var in TypeScript files." },
+          { "type": 2, "bubbleId": "c2", "text": "Understood, I will use const and let." }
+        ]
+      }
+    },
+    { "key": "bubbleId:comp-3:broken", "value": "not json at all" }
+  ]
+}

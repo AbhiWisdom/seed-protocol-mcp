@@ -1,186 +1,110 @@
-#!/usr/bin/env node
-
 /**
- * SEED Protocol — One-Command MCP Setup
- * Usage: npx seed-protocol-mcp setup YOUR_API_KEY
- * 
- * Auto-detects and configures: Claude Code, Cursor, Windsurf, VS Code (Cline)
+ * `npx seed-protocol-mcp setup YOUR_API_KEY`
+ * Adds the seed-protocol MCP server to every detected client config:
+ * Claude Desktop, Cursor, Windsurf, VS Code (Cline), Claude Code (CLI).
+ * Also saves the key to ~/.seed/config.json (chmod 600) for the CLI commands.
  */
 
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
-import { homedir, platform } from 'node:os';
+import { existsSync, mkdirSync, readFileSync, realpathSync, writeFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+import { DASHBOARD_URL, DEFAULT_API_URL, editorConfigPaths, saveConfig } from "./config.js";
 
-const HOME = homedir();
-const IS_MAC = platform() === 'darwin';
-const IS_WIN = platform() === 'win32';
+const SERVER_NAME = "seed-protocol";
 
-// MCP config to inject
-function getMcpConfig(apiKey) {
+/** MCP server entry injected into each client config (unchanged since 2.2). */
+export function getMcpConfig(apiKey) {
   return {
     command: "npx",
     args: ["-y", "seed-protocol-mcp@latest"],
-    env: {
-      SEED_API_KEY: apiKey,
-      SEED_API_URL: "https://seed.abhibots.com"
-    }
+    env: { SEED_API_KEY: apiKey, SEED_API_URL: DEFAULT_API_URL },
   };
 }
 
-// Editor config paths
-function getEditorPaths() {
-  const appData = IS_MAC
-    ? join(HOME, 'Library', 'Application Support')
-    : IS_WIN
-      ? process.env.APPDATA || join(HOME, 'AppData', 'Roaming')
-      : join(HOME, '.config');
-
-  return [
-    {
-      name: 'Claude Desktop',
-      path: IS_MAC
-        ? join(appData, 'Claude', 'claude_desktop_config.json')
-        : IS_WIN
-          ? join(appData, 'Claude', 'claude_desktop_config.json')
-          : join(HOME, '.config', 'claude', 'claude_desktop_config.json'),
-      key: 'mcpServers',
-      serverName: 'seed-protocol'
-    },
-    {
-      name: 'Cursor',
-      path: join(HOME, '.cursor', 'mcp.json'),
-      key: 'mcpServers',
-      serverName: 'seed-protocol'
-    },
-    {
-      name: 'Windsurf',
-      path: IS_MAC
-        ? join(HOME, '.codeium', 'windsurf', 'mcp_config.json')
-        : join(appData, 'Windsurf', 'mcp_config.json'),
-      key: 'mcpServers',
-      serverName: 'seed-protocol'
-    },
-    {
-      name: 'VS Code (Cline)',
-      path: IS_MAC
-        ? join(appData, 'Code', 'User', 'globalStorage', 'saoudrizwan.claude-dev', 'settings', 'cline_mcp_settings.json')
-        : join(appData, 'Code', 'User', 'globalStorage', 'saoudrizwan.claude-dev', 'settings', 'cline_mcp_settings.json'),
-      key: 'mcpServers',
-      serverName: 'seed-protocol'
-    },
-    {
-      name: 'Claude Code (CLI)',
-      path: join(HOME, '.claude.json'),
-      key: 'mcpServers',
-      serverName: 'seed-protocol'
-    },
-  ];
-}
-
-function setupEditor(editor, mcpConfig) {
+function setupEditor(path, mcpConfig) {
   try {
     let config = {};
-
-    // Read existing config
-    if (existsSync(editor.path)) {
+    if (existsSync(path)) {
       try {
-        config = JSON.parse(readFileSync(editor.path, 'utf-8'));
+        config = JSON.parse(readFileSync(path, "utf-8"));
       } catch {
         config = {};
       }
     }
-
-    // Ensure mcpServers exists
-    if (!config[editor.key]) {
-      config[editor.key] = {};
-    }
-
-    // Add seed-protocol
-    config[editor.key][editor.serverName] = mcpConfig;
-
-    // Create dir if needed
-    const dir = join(editor.path, '..');
-    if (!existsSync(dir)) {
-      mkdirSync(dir, { recursive: true });
-    }
-
-    // Write config
-    writeFileSync(editor.path, JSON.stringify(config, null, 2));
+    if (!config.mcpServers) config.mcpServers = {};
+    config.mcpServers[SERVER_NAME] = mcpConfig;
+    mkdirSync(dirname(path), { recursive: true });
+    writeFileSync(path, JSON.stringify(config, null, 2));
     return true;
-  } catch (err) {
+  } catch {
     return false;
   }
 }
 
-// ─── Main ───
-function main() {
-  const args = process.argv.slice(2);
-
-  // Check if this is a setup command
-  if (args[0] !== 'setup') {
-    // Not setup mode — run as MCP server (import the main module)
-    import('./index.js');
-    return;
-  }
-
+/**
+ * @param {string[]} args argv after the bin name, e.g. ["setup", "seed_…"]
+ * @returns {number} exit code
+ */
+export function runSetup(args, { log = console.log } = {}) {
   const apiKey = args[1] || process.env.SEED_API_KEY;
-
-  console.log('\n🧬 SEED Protocol — MCP Setup\n');
-
+  log("\n🧬 SEED Protocol — MCP Setup\n");
   if (!apiKey) {
-    console.log('Usage: npx seed-protocol-mcp setup YOUR_API_KEY');
-    console.log('');
-    console.log('Get your API key at: https://seed.abhibots.com/create');
-    console.log('');
-    console.log('Or set environment variable: SEED_API_KEY=your_key');
-    process.exit(1);
+    log("Usage: npx seed-protocol-mcp setup YOUR_API_KEY\n");
+    log(`Get your API key from your dashboard: ${DASHBOARD_URL}\n`);
+    log("Or set environment variable: SEED_API_KEY=your_key");
+    return 1;
   }
 
   const mcpConfig = getMcpConfig(apiKey);
-  const editors = getEditorPaths();
   let configured = 0;
   let found = 0;
-
-  console.log('Scanning for code editors...\n');
-
-  for (const editor of editors) {
-    const dirExists = existsSync(join(editor.path, '..'));
-    const fileExists = existsSync(editor.path);
-
-    if (dirExists || fileExists) {
+  log("Scanning for code editors...\n");
+  for (const editor of editorConfigPaths()) {
+    if (existsSync(join(editor.path, "..")) || existsSync(editor.path)) {
       found++;
-      const success = setupEditor(editor, mcpConfig);
-      if (success) {
+      if (setupEditor(editor.path, mcpConfig)) {
         configured++;
-        console.log(`  ✅ ${editor.name} — configured`);
-        console.log(`     ${editor.path}`);
+        log(`  ✅ ${editor.name} — configured`);
+        log(`     ${editor.path}`);
       } else {
-        console.log(`  ❌ ${editor.name} — failed (permission error?)`);
+        log(`  ❌ ${editor.name} — failed (permission error?)`);
       }
     } else {
-      console.log(`  ⬜ ${editor.name} — not installed`);
+      log(`  ⬜ ${editor.name} — not installed`);
     }
   }
 
-  console.log(`\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
-  console.log(`Found: ${found} editors | Configured: ${configured}`);
-
-  if (configured > 0) {
-    console.log(`\n🎉 Done! Restart your editor to activate the soul.`);
-    console.log(`   The AI will auto-load Avni's personality on first message.`);
-    console.log(`\n   Tools available:`);
-    console.log(`   • load_soul    — Load AI personality`);
-    console.log(`   • remember     — Save memories`);
-    console.log(`   • recall       — Search memories`);
-    console.log(`   • evolve_soul  — Record learned behaviors`);
-    console.log(`   • get_skills   — View 200+ skills`);
-  } else {
-    console.log(`\n⚠️  No supported editors found.`);
-    console.log(`   Manually add this to your MCP config:\n`);
-    console.log(JSON.stringify({ "seed-protocol": mcpConfig }, null, 2));
+  try {
+    const saved = saveConfig({ api_key: apiKey, api_url: DEFAULT_API_URL });
+    log(`\n  Key saved for CLI commands (import, status): ${saved}`);
+  } catch {
+    log("\n  Could not save the key for CLI commands — pass --key to import/status instead.");
   }
 
-  console.log('');
+  log("\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+  log(`Found: ${found} editors | Configured: ${configured}`);
+  if (configured > 0) {
+    log("\n🎉 Done! Restart your editor to activate your soul.");
+    log("   The AI loads your soul (load_soul) at the start of each conversation.");
+    log("\n   Tools: load_soul · remember · recall · correct · evolve_soul · get_soul_state");
+    log("          daily_log · kb_write · kb_search · history_search (local) · get_skills");
+    log("\n   Next: build your soul from past sessions (stays local until you say yes):");
+    log("     npx seed-protocol-mcp import claude-code");
+  } else {
+    log("\n⚠️  No supported editors found.");
+    log("   Manually add this to your MCP config:\n");
+    log(JSON.stringify({ [SERVER_NAME]: mcpConfig }, null, 2));
+  }
+  log("");
+  return 0;
 }
 
-main();
+// Back-compat: 2.4 shipped this file as the bin. Run directly, it behaves like the CLI.
+function isMain() {
+  try {
+    return Boolean(process.argv[1]) && realpathSync(process.argv[1]) === realpathSync(fileURLToPath(import.meta.url));
+  } catch {
+    return false;
+  }
+}
+if (isMain()) import("./cli.js");

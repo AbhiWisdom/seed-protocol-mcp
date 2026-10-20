@@ -5,3 +5,4 @@ dist
 *.local
 vault/*.seed.json
 !vault/example.seed.json
+archive/

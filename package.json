@@ -1,23 +1,36 @@
 {
   "name": "seed-protocol-mcp",
-  "version": "2.4.0",
-  "description": "Give your AI a Soul — persistent personality, emotions, memories, and 200+ skills that evolve with every conversation. One command setup for Claude, Cursor, Windsurf, VS Code.",
+  "version": "2.5.0",
+  "description": "Give your AI a soul — memories, corrections, daily logs and a knowledge base that persist across Claude, Cursor, Windsurf and VS Code. Imports your AI-tool history into a local-first brain.",
   "type": "module",
   "main": "src/index.js",
   "bin": {
-    "seed-protocol-mcp": "src/setup.js"
+    "seed-protocol-mcp": "src/cli.js"
+  },
+  "files": [
+    "src/",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "test": "node --test test/*.test.js",
+    "pack:check": "npm pack --dry-run"
   },
   "keywords": [
     "mcp",
+    "model-context-protocol",
     "seed-protocol",
-    "ai-personality",
+    "ai-memory",
     "ai-soul",
-    "consciousness",
+    "ai-personality",
     "claude",
+    "claude-code",
     "cursor",
     "windsurf",
     "cline",
-    "vedanta",
+    "local-first",
     "auto-setup"
   ],
   "license": "MIT",
@@ -27,7 +40,8 @@
     "url": "https://github.com/AbhiWisdom/seed-protocol-mcp"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.12.1",
-    "zod": "^3.24.4"
+    "@modelcontextprotocol/sdk": "^1.32.1",
+    "sql.js": "~1.14.2",
+    "zod": "^3.25.76"
   }
 }

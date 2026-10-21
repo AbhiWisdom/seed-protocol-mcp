@@ -23,7 +23,7 @@ Import options: --yes  --local-only  --days N  --path P  --full  --key K
 Get your key: https://seed.abhibots.com/login`;
 
 const VALUE_FLAGS = { "--days": "days", "--path": "path", "--key": "key", "--api": "api" };
-const BOOL_FLAGS = { "--yes": "yes", "-y": "yes", "--local-only": "localOnly", "--full": "full" };
+const BOOL_FLAGS = { "--yes": "yes", "-y": "yes", "--local-only": "localOnly", "--full": "full", "--help": "help", "-h": "help" };
 
 function parseArgs(args) {
   const flags = {};
@@ -51,6 +51,11 @@ async function main(argv) {
     }
     case "import": {
       const { flags, positional } = parseArgs(rest);
+      if (flags.help) {
+        const { IMPORT_USAGE } = await import("./import/command.js");
+        console.log(IMPORT_USAGE);
+        return 0;
+      }
       if (flags.unknown || Number.isNaN(flags.days)) {
         console.error(`Bad option: ${flags.unknown?.join(" ") || "--days needs a whole number"}`);
         return 1;
@@ -60,6 +65,10 @@ async function main(argv) {
     }
     case "status": {
       const { flags } = parseArgs(rest);
+      if (flags.help) {
+        console.log(HELP);
+        return 0;
+      }
       const { runStatus } = await import("./status.js");
       return runStatus(flags);
     }

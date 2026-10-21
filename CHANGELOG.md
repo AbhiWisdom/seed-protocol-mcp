@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.5.1 — 2026-10-21
+
+### Fixed
+- `setup --help` (or any flag) was taken as the API key and written into every editor's MCP config, breaking a working setup. Flags are now rejected; `--help` / `-h` prints usage and changes nothing.
+- `import --help` printed "Bad option"; it now prints the import options. `status --help` prints help instead of running a status check.
+
 ## 2.5.0 — 2026-10-21
 
 **Your soul, your history — local-first.**

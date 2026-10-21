@@ -2,6 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createServer } from "node:http";
 import { ApiError, createApi, withRateLimitRetry } from "../src/api.js";
+import { VERSION } from "../src/config.js";
 import { SOUL_ID, TEST_KEY, startMockApi } from "./helpers/mock-api.js";
 
 test("sends X-Api-Key, caches /me, resolves the soul id", async () => {
@@ -16,7 +17,7 @@ test("sends X-Api-Key, caches /me, resolves the soul id", async () => {
     for (const r of mock.requests) assert.equal(r.headers["x-api-key"], TEST_KEY);
     const post = mock.requests.find((r) => r.method === "POST");
     assert.equal(post.headers["content-type"], "application/json");
-    assert.match(post.headers["user-agent"], /^seed-protocol-mcp\/2\.5\.0$/);
+    assert.equal(post.headers["user-agent"], `seed-protocol-mcp/${VERSION}`);
   } finally {
     await mock.close();
   }

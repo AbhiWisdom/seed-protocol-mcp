@@ -41,17 +41,30 @@ function setupEditor(path, mcpConfig) {
   }
 }
 
+const SETUP_USAGE = `Usage: npx seed-protocol-mcp setup YOUR_API_KEY
+
+Get your API key from your dashboard: ${DASHBOARD_URL}
+Or set environment variable: SEED_API_KEY=your_key`;
+
 /**
  * @param {string[]} args argv after the bin name, e.g. ["setup", "seed_…"]
  * @returns {number} exit code
  */
 export function runSetup(args, { log = console.log } = {}) {
-  const apiKey = args[1] || process.env.SEED_API_KEY;
+  const arg = args[1];
+  // A flag is never a key: writing "--help" into every editor config would break a working setup.
+  if (arg === "--help" || arg === "-h") {
+    log(SETUP_USAGE);
+    return 0;
+  }
+  if (arg?.startsWith("-")) {
+    log(`Bad option: ${arg}\n\n${SETUP_USAGE}`);
+    return 1;
+  }
+  const apiKey = arg || process.env.SEED_API_KEY;
   log("\n🧬 SEED Protocol — MCP Setup\n");
   if (!apiKey) {
-    log("Usage: npx seed-protocol-mcp setup YOUR_API_KEY\n");
-    log(`Get your API key from your dashboard: ${DASHBOARD_URL}\n`);
-    log("Or set environment variable: SEED_API_KEY=your_key");
+    log(SETUP_USAGE);
     return 1;
   }
 

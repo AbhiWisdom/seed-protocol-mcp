@@ -10,7 +10,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync, chmodSync } from "n
 import { homedir, platform } from "node:os";
 import { dirname, join } from "node:path";
 
-export const VERSION = "2.5.0";
+export const VERSION = "2.5.1";
 export const DEFAULT_API_URL = "https://seed.abhibots.com";
 export const DASHBOARD_URL = "https://seed.abhibots.com/login";
 

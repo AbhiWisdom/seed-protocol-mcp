@@ -174,6 +174,41 @@ describe("status and setup", () => {
   test("help and version", async () => {
     const env = sandboxEnv();
     assert.match((await runCli(["--help"], { env })).stdout, /import claude-code/);
-    assert.equal((await runCli(["--version"], { env })).stdout.trim(), "2.5.0");
+    // --version must match package.json, so a bump can't leave src/config.js behind.
+    const pkg = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8"));
+    assert.equal((await runCli(["--version"], { env })).stdout.trim(), pkg.version);
+  });
+
+  test("--help on every subcommand prints usage and touches nothing", async () => {
+    const env = sandboxEnv({ SEED_API_KEY: TEST_KEY });
+    mkdirSync(join(env.HOME, ".cursor"), { recursive: true });
+    const cursorFile = join(env.HOME, ".cursor", "mcp.json");
+    const before = JSON.stringify({ mcpServers: { "seed-protocol": { command: "npx", env: { SEED_API_KEY: TEST_KEY } } } });
+    writeFileSync(cursorFile, before);
+
+    for (const flag of ["--help", "-h"]) {
+      const imp = await runCli(["import", flag], { env });
+      assert.equal(imp.code, 0, imp.stderr);
+      assert.match(imp.stdout, /Usage: npx seed-protocol-mcp import <claude-code\|cursor>/);
+      assert.match(imp.stdout, /--local-only/);
+
+      const setup = await runCli(["setup", flag], { env });
+      assert.equal(setup.code, 0, setup.stderr);
+      assert.match(setup.stdout, /Usage: npx seed-protocol-mcp setup YOUR_API_KEY/);
+
+      const status = await runCli(["status", flag], { env });
+      assert.equal(status.code, 0, status.stderr);
+      assert.match(status.stdout, /import claude-code/);
+    }
+    assert.equal((await runCli(["import", "claude-code", "--help"], { env })).code, 0);
+
+    const bad = await runCli(["setup", "--key"], { env });
+    assert.equal(bad.code, 1);
+    assert.match(bad.stdout, /Bad option: --key/);
+
+    // No flag ever became a key: the existing editor config and saved config are untouched.
+    assert.equal(readFileSync(cursorFile, "utf8"), before);
+    assert.ok(!existsSync(join(env.HOME, ".claude.json")));
+    assert.ok(!existsSync(join(env.SEED_HOME, "config.json")));
   });
 });

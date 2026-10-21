@@ -8,7 +8,8 @@ import { createServer } from "node:http";
 export const TEST_KEY = ["seed", "_", "a1b2c3d4e5f60718293a4b5c6d7e8f90"].join("");
 export const SOUL_ID = "soul-test-0001";
 
-export async function startMockApi({ key = TEST_KEY, soul = { id: SOUL_ID, name: "Nova" } } = {}) {
+/** fresh: a brand-new soul (no memories, corrections or articles) → first_run. */
+export async function startMockApi({ key = TEST_KEY, soul = { id: SOUL_ID, name: "Nova" }, fresh = false } = {}) {
   const state = {
     requests: [],
     memories: [{ id: "m1", content: "User deploys with pm2", category: "fact", importance: 0.7, created_at: "2026-10-01T00:00:00Z" }],
@@ -18,6 +19,7 @@ export async function startMockApi({ key = TEST_KEY, soul = { id: SOUL_ID, name:
     imports: [],
     vasanas: [{ trait_name: "concise", description: "Likes short answers", intensity: 0.8, seen: 3 }],
   };
+  if (fresh) Object.assign(state, { memories: [], corrections: [], kb: [] });
   const owned = new Set(soul ? [soul.id] : []);
 
   const server = createServer(async (req, res) => {
@@ -95,7 +97,13 @@ export async function startMockApi({ key = TEST_KEY, soul = { id: SOUL_ID, name:
         return send(200, { articles: state.kb.filter((a) => !q || `${a.title} ${a.body} ${a.tags}`.toLowerCase().includes(q)) });
       }
       case "POST /kb": {
-        const article = { id: `k${state.kb.length + 1}`, ...body, auto: false, updated_at: new Date().toISOString() };
+        const { key, ...fields } = body;
+        const existing = key && state.kb.find((a) => a.key === key); // backend: same key = update in place
+        if (existing) {
+          Object.assign(existing, fields, { updated_at: new Date().toISOString() });
+          return send(201, { ok: true, article: existing });
+        }
+        const article = { id: `k${state.kb.length + 1}`, ...fields, key, auto: false, synced: Boolean(key), updated_at: new Date().toISOString() };
         state.kb.push(article);
         return send(201, { ok: true, article });
       }

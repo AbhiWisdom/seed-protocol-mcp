@@ -1,7 +1,8 @@
 /**
- * Consent-gated upload of import digests. Only runs after the user typed "y"
- * (or passed --yes). Sends: daily logs (one per day), preference memories,
- * and one import record with counts. Everything is scrubbed once more right
+ * Consent-gated upload of import digests. Only runs after the user said yes
+ * (typed "y", passed --yes, or agreed in chat before build_soul upload=true).
+ * Sends: daily logs (one per day), memories, keyed knowledge articles, and one
+ * import record with counts. Everything is scrubbed once more right
  * before it leaves the machine. Already-uploaded items are remembered in the
  * brain's meta table so re-imports never duplicate memories.
  */
@@ -15,14 +16,19 @@ import { preferenceKey } from "./digest.js";
 const hash = (s) => createHash("sha256").update(s).digest("hex").slice(0, 32);
 const logKey = (source, day) => `upload:log:${source}:${day}`;
 const prefKey = (source, text) => `upload:pref:${source}:${hash(preferenceKey(text))}`;
+const kbKey = (source, key) => `upload:kb:${source}:${key}`;
+const articleHash = (a) => hash(`${a.title}\n${a.tags.join(",")}\n${a.body}`);
 
-/** Drop digests whose exact text was already uploaded and prefs already sent. */
-export function planUpload(brain, source, digests, prefs) {
+/** Drop logs/articles whose exact text was already uploaded and memories already sent. */
+export function planUpload(brain, source, digests, prefs, articles = []) {
   return {
     logs: digests.filter((d) => brain.getMeta(logKey(source, d.day)) !== hash(d.summary)),
     memories: prefs.filter((p) => !brain.getMeta(prefKey(source, p.text))),
+    articles: articles.filter((a) => brain.getMeta(kbKey(source, a.key)) !== articleHash(a)),
   };
 }
+
+export const planSize = (plan) => plan.logs.length + plan.memories.length + (plan.articles?.length || 0);
 
 /**
  * Ask a yes/no question. EOF or anything but y/yes counts as "no".
@@ -51,10 +57,10 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 /**
  * Upload the plan. 60 writes/min is the server's ceiling, so big batches are
  * paced and 429s are retried with Retry-After.
- * @returns {Promise<{ logs: number, memories: number }>}
+ * @returns {Promise<{ logs: number, memories: number, articles: number }>}
  */
 export async function runUpload(api, brain, source, plan, totals, { log = console.log, pace } = {}) {
-  const writes = plan.logs.length + plan.memories.length + 1;
+  const writes = planSize(plan) + 1;
   const gap = pace ?? (writes > 50 ? 1100 : 0);
   let last = 0;
   const send = async (suffix, body) => {
@@ -67,6 +73,7 @@ export async function runUpload(api, brain, source, plan, totals, { log = consol
   const label = `import:${source}`;
   let logs = 0;
   let memories = 0;
+  let articles = 0;
   for (const d of plan.logs) {
     await send("/daily-logs", { day: d.day, source: label, summary: scrub(d.summary), stats: scrubDeep(d.stats) });
     brain.setMeta(logKey(source, d.day), hash(d.summary));
@@ -74,9 +81,14 @@ export async function runUpload(api, brain, source, plan, totals, { log = consol
     if (logs % 10 === 0) log(`  …${logs}/${plan.logs.length} daily logs`);
   }
   for (const p of plan.memories) {
-    await send("/remember", { content: scrub(p.text), category: "preference", importance: 0.6 });
+    await send("/remember", { content: scrub(p.text), category: p.category || "preference", importance: p.importance ?? 0.6 });
     brain.setMeta(prefKey(source, p.text), "1");
     memories++;
+  }
+  for (const a of plan.articles || []) {
+    await send("/kb", { key: a.key, title: scrub(a.title), body: scrub(a.body), tags: a.tags.map(scrub) });
+    brain.setMeta(kbKey(source, a.key), articleHash(a));
+    articles++;
   }
   await send("/imports", {
     source,
@@ -86,5 +98,5 @@ export async function runUpload(api, brain, source, plan, totals, { log = consol
     memories_added: memories,
     corrections_added: 0,
   });
-  return { logs, memories };
+  return { logs, memories, articles };
 }

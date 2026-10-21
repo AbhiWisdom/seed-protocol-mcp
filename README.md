@@ -31,8 +31,9 @@ Every AI forgets you when the session ends. Your preferences, your stack, the mi
    ```
 
    This adds SEED to every MCP client it finds (Claude Desktop, Claude Code, Cursor, Windsurf, VS Code/Cline).
-3. Restart your editor. The AI calls `load_soul` at the start of each conversation.
-4. Optional — give your soul a head start from your past AI sessions (stays local until you say yes):
+3. Restart your editor and start a chat. On a new soul the AI's first job is `build_soul`: it reads what already exists on your machine — Claude Code / Cursor history, or an OpenClaw agent's notes — shows you a preview, and uploads only if you say yes. After that it calls `load_soul` at the start of every conversation.
+
+   Prefer the terminal? Same thing, same consent question:
 
    ```bash
    npx seed-protocol-mcp import claude-code
@@ -61,7 +62,8 @@ Every AI forgets you when the session ends. Your preferences, your stack, the mi
 
 | Tool | When the AI uses it |
 |------|---------------------|
-| `load_soul` | First thing in every conversation — identity, personality, live state, 10 recent memories, active corrections (never repeat), today's log status, knowledge-base size |
+| `load_soul` | First thing in every conversation — identity, personality, live state, 10 recent memories, active corrections (never repeat), today's log status, knowledge-base size. On a new soul it returns `first_run` |
+| `build_soul` | First job on a new soul (or when you ask to import) — builds it from this machine's history: preview first, upload only after you agree, re-runs send only what changed |
 | `get_soul_state` | Current emotional state, learned traits and counts |
 | `evolve_soul` | Record a stable behaviour pattern as a trait (e.g. `likes-concise-answers`) |
 | `remember` | Save a durable fact, preference or decision |
@@ -81,6 +83,7 @@ Every AI forgets you when the session ends. Your preferences, your stack, the mi
 npx seed-protocol-mcp setup <KEY>          # configure MCP clients + save key for the CLI
 npx seed-protocol-mcp import claude-code   # ~/.claude/projects/*/*.jsonl → local brain
 npx seed-protocol-mcp import cursor        # Cursor state.vscdb → local brain (best effort)
+npx seed-protocol-mcp import openclaw      # OpenClaw workspace notes → daily logs, memories, articles
 npx seed-protocol-mcp status               # key, API reachability, soul, local brain counts
 npx -y seed-protocol-mcp                   # start the MCP server on stdio (what clients run)
 ```
@@ -92,22 +95,27 @@ Import options:
 | `--yes` | Upload without asking (after the local import) |
 | `--local-only` | Build the local brain only — never upload |
 | `--days N` | Upload digests for the last N days (default 30, `0` = all) |
-| `--path P` | Custom Claude Code projects dir or Cursor `state.vscdb` path |
+| `--path P` | Custom Claude Code projects dir, Cursor `state.vscdb` path or OpenClaw workspace |
 | `--full` | Re-read Claude Code files even if unchanged |
 | `--key K` | API key (default: `SEED_API_KEY`, else the key saved by `setup`) |
 
-Re-running an import is safe: messages are stored once, and digests/preferences that were already uploaded are not sent again.
+Re-running an import is safe: messages are stored once, and digests, memories and articles that were already uploaded are not sent again — only new or changed items go. That makes `import openclaw --yes` fine on a cron, so an always-on agent keeps its dashboard current:
+
+```bash
+*/15 * * * * npx -y seed-protocol-mcp import openclaw --yes >> ~/.seed/openclaw-sync.log 2>&1
+```
 
 ## Privacy
 
 - **Raw history stays local.** Imports write to `~/.seed/brain.sqlite` (owner-only permissions). `history_search` reads only that file and makes no network request. Delete the file to wipe it.
-- **Nothing is uploaded without consent.** After an import you see a summary and the question `Upload N daily logs and M preference memories to your SEED dashboard? (y/N)`. Only `y` (or `--yes`) uploads. `--local-only` never does.
+- **Nothing is uploaded without consent.** After an import you see a summary and the question `Upload N daily logs and M preference memories to your SEED dashboard? (y/N)`. Only `y` (or `--yes`) uploads. `--local-only` never does. In chat, `build_soul` shows the same preview and the AI must ask you before calling it with `upload=true`.
 - **What gets uploaded (only after yes):**
   - one digest per day — date, session and message counts, project folder names, and the first line of each of your prompts (truncated);
   - up to 50 preference sentences you wrote yourself (lines with *always / never / don't / prefer / instead / hamesha / mat karo …*), as `preference` memories;
   - one import record with counts only.
 
   Assistant replies, tool output, code blocks and full conversations are never uploaded.
+- **OpenClaw is different on purpose:** those files are the agent's own notes, so they go as written (scrubbed): `memory/YYYY-MM-DD.md` as daily logs (first ~19k chars), `MEMORY.md` bullets as memories, other `memory/*.md` notes and the skills committed to the workspace git as knowledge articles. Installed (untracked) skill packs, `SOUL.md`, `USER.md` and session transcripts are not read.
 - **Secrets are scrubbed** before anything is stored locally *and* again before any upload: OpenAI/Anthropic keys, SEED keys, AWS access keys, GitHub/Slack/Google/Stripe/Telegram tokens, JWTs, bearer tokens, PEM private keys, `scheme://user:pass@` credentials and `api_key=… / password: …` style assignments become `[REDACTED:<type>]`. The server scrubs once more on write.
 
 ## Configuration
@@ -118,6 +126,7 @@ Re-running an import is safe: messages are stored once, and digests/preferences 
 | `SEED_API_URL` | `https://seed.abhibots.com` | API base URL |
 | `SEED_HOME` | `~/.seed` | Local brain + CLI config location |
 | `CLAUDE_CONFIG_DIR` | `~/.claude` | Where `import claude-code` looks for `projects/` |
+| `OPENCLAW_PROFILE` | — | `import openclaw` reads `~/.openclaw-<profile>/workspace` instead of `~/.openclaw/workspace` |
 
 Requires Node.js 18+. No native build — the local brain uses [sql.js](https://github.com/sql-js/sql.js) (SQLite compiled to WebAssembly).
 

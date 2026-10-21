@@ -1,5 +1,6 @@
 /**
  * Soul tools: load_soul (session start), get_soul_state, evolve_soul.
+ * A new soul carries `first_run`, telling the AI to run build_soul before anything else.
  */
 
 import { z } from "zod";
@@ -25,7 +26,14 @@ const SECURITY = {
   ],
 };
 
+const FIRST_RUN =
+  "New soul: before the user's first task, call build_soul (upload=false), show the user what it found on this machine, and call it again with upload=true only if they agree. Then continue with their request.";
+
+/** Nothing built yet: no daily logs, no articles, at most a couple of memories. */
+export const isFresh = (counts) => Boolean(counts) && (counts.memories ?? 0) < 3 && !counts.daily_logs && !counts.kb;
+
 const SESSION_PROTOCOL = [
+  "If first_run is present, do it first: build_soul preview → ask the user → upload.",
   "Follow the corrections below — never repeat a past mistake.",
   "remember: save durable facts and preferences the user states (not chit-chat).",
   "correct: whenever the user corrects you, record what was wrong and what is right.",
@@ -115,7 +123,10 @@ async function loadSoul(api, { soul_id }) {
     security: SECURITY,
   };
   if (warnings.length) result.warnings = warnings;
-  return ok(result, `Soul "${result.identity.name || sid}" loaded. Follow the session_protocol.`);
+  const fresh = isFresh(state?.counts);
+  if (fresh) result.first_run = FIRST_RUN;
+  const name = result.identity.name || sid;
+  return ok(result, `Soul "${name}" loaded. ${fresh ? "New soul — call build_soul first (see first_run). " : ""}Follow the session_protocol.`);
 }
 
 export function registerSoulTools(server, api) {
@@ -124,7 +135,7 @@ export function registerSoulTools(server, api) {
     {
       title: "Load your soul",
       description:
-        "Call this FIRST at the start of every conversation. Loads the user's SEED soul: identity and personality, live emotional state and learned traits, the 10 most recent memories, active corrections (past mistakes you must NEVER repeat), whether today's daily log exists, and the knowledge-base size. Read-only.",
+        "Call this FIRST at the start of every conversation. Loads the user's SEED soul: identity and personality, live emotional state and learned traits, the 10 most recent memories, active corrections (past mistakes you must NEVER repeat), whether today's daily log exists, and the knowledge-base size. On a new soul it returns first_run: run build_soul before anything else. Read-only.",
       inputSchema: {
         soul_id: z.string().min(1).max(100).optional().describe("Only to switch to another soul owned by the same account. Omit to load your own soul."),
       },
@@ -138,11 +149,16 @@ export function registerSoulTools(server, api) {
     {
       title: "Get soul state",
       description:
-        "Returns the soul's live state: personality, emotional state, learned traits (vasanas) and counts of memories, corrections, daily logs and knowledge-base articles. Use when you need the current mood/traits mid-session. Read-only.",
+        "Returns the soul's live state: personality, emotional state, learned traits (vasanas) and counts of memories, corrections, daily logs and knowledge-base articles. Use when you need the current mood/traits mid-session. On a new soul it returns first_run: run build_soul first. Read-only.",
       inputSchema: {},
       annotations: READ,
     },
-    safe(async () => ok(await api.get("/state"))),
+    safe(async () => {
+      const state = await api.get("/state");
+      return isFresh(state?.counts)
+        ? ok({ ...state, first_run: FIRST_RUN }, "New soul — call build_soul first (see first_run).")
+        : ok(state);
+    }),
   );
 
   server.registerTool(

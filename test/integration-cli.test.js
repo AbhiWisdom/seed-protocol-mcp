@@ -189,7 +189,7 @@ describe("status and setup", () => {
     for (const flag of ["--help", "-h"]) {
       const imp = await runCli(["import", flag], { env });
       assert.equal(imp.code, 0, imp.stderr);
-      assert.match(imp.stdout, /Usage: npx seed-protocol-mcp import <claude-code\|cursor>/);
+      assert.match(imp.stdout, /Usage: npx seed-protocol-mcp import <claude-code\|cursor\|openclaw>/);
       assert.match(imp.stdout, /--local-only/);
 
       const setup = await runCli(["setup", flag], { env });

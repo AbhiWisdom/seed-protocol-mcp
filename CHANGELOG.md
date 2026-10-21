@@ -1,5 +1,18 @@
 # Changelog
 
+## 2.6.0 — 2026-10-21
+
+**Connect it, and the first chat builds your soul.**
+
+### Added
+- `build_soul` tool: builds the soul from what already exists on this machine (Claude Code, Cursor, OpenClaw). `upload=false` is a local preview; `upload=true` only after the user agrees in chat. Uploads in batches of 45 to stay under the rate limit; re-runs send only new or changed items.
+- First run: on a new soul (no daily logs, no articles, fewer than 3 memories) `load_soul` and `get_soul_state` return `first_run`, telling the AI to run `build_soul` before anything else.
+- `import openclaw`: an OpenClaw workspace's daily notes → daily logs, `MEMORY.md` bullets → memories, topic notes + git-tracked skills → knowledge articles. Changed notes update in place (keyed articles, per-day logs), so it is safe on a cron. `OPENCLAW_PROFILE` picks `~/.openclaw-<profile>/workspace`.
+
+### Changed
+- Import code is one pipeline (`src/import/pipeline.js`) shared by the CLI and `build_soul`.
+- Knowledge articles can carry a stable `key`; the server updates the article with that key instead of adding a copy.
+
 ## 2.5.1 — 2026-10-21
 
 ### Fixed

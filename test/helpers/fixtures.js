@@ -4,7 +4,8 @@
  * copied into a temp dir.
  */
 
-import { cpSync, mkdtempSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
+import { execFileSync } from "node:child_process";
+import { cpSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -71,6 +72,32 @@ export async function cursorDbFixture({ withKvTable = true } = {}) {
   writeFileSync(path, Buffer.from(db.export()));
   db.close();
   return path;
+}
+
+/**
+ * A small OpenClaw workspace: two daily notes (one with a secret), MEMORY.md, a topic
+ * note, one git-tracked skill (the agent's own) and one untracked installed pack.
+ */
+export function openclawWorkspaceFixture(dir = tempDir("openclaw-ws-")) {
+  mkdirSync(join(dir, "memory"), { recursive: true });
+  writeFileSync(join(dir, "memory", "2026-10-01.md"), `# 2026-10-01\n- Fixed nginx 502 on shop\n- rotated ${FAKE.GITHUB_TOKEN}\n`);
+  writeFileSync(join(dir, "memory", "2026-10-02.md"), "# 2026-10-02\n- Deployed vgen with a smoke test\n");
+  writeFileSync(join(dir, "memory", "pending-lessons.md"), "# Pending lessons\n- Check pm2 status before any restart\n");
+  writeFileSync(join(dir, "MEMORY.md"), [
+    "# MEMORY", "", "## Box",
+    "- **Deploys** go through deploy.sh with a smoke test",
+    "  and auto-rollback on failure.",
+    "- short",
+    "- Owner wants Hinglish replies, never formal English",
+  ].join("\n"));
+  const skills = { "shop-ops": "---\nname: shop-ops\n---\n# Shop ops\nRestart order: api, then bot.\n", "video-pack": "# Installed pack\n" };
+  for (const [name, text] of Object.entries(skills)) {
+    mkdirSync(join(dir, "skills", name), { recursive: true });
+    writeFileSync(join(dir, "skills", name, "SKILL.md"), text);
+  }
+  execFileSync("git", ["init", "-q", dir]);
+  execFileSync("git", ["-C", dir, "add", "skills/shop-ops/SKILL.md"]);
+  return dir;
 }
 
 /** Every fake secret value, for "never leaked" assertions. */

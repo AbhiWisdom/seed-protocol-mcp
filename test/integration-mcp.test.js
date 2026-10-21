@@ -11,7 +11,7 @@ import { ALL_FAKE_SECRETS, FAKE, claudeProjectsFixture } from "./helpers/fixture
 import { SOUL_ID, TEST_KEY, startMockApi } from "./helpers/mock-api.js";
 import { CLI, runCli, sandboxEnv } from "./helpers/run-cli.js";
 
-const EXPECTED_TOOLS = ["correct", "daily_log", "evolve_soul", "get_skills", "get_soul_state", "history_search", "kb_search", "kb_write", "load_soul", "recall", "remember"];
+const EXPECTED_TOOLS = ["build_soul", "correct", "daily_log", "evolve_soul", "get_skills", "get_soul_state", "history_search", "kb_search", "kb_write", "load_soul", "recall", "remember"];
 const today = () => {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;

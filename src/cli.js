@@ -4,7 +4,7 @@
  * seed-protocol-mcp bin.
  *   (no args)              → MCP server over stdio (what MCP clients run)
  *   setup <KEY>            → configure detected MCP clients
- *   import <claude-code|cursor> [--yes] [--local-only] [--days N] [--path P]
+ *   import <claude-code|cursor|openclaw> [--yes] [--local-only] [--days N] [--path P]
  *   status                 → key / API / soul / local brain
  * Any other argument also starts the server, exactly like 2.4 did.
  */
@@ -17,6 +17,7 @@ const HELP = `SEED Protocol MCP v${VERSION}
   npx seed-protocol-mcp setup <KEY>          add SEED to Claude, Cursor, Windsurf, VS Code
   npx seed-protocol-mcp import claude-code   build your local brain from Claude Code history
   npx seed-protocol-mcp import cursor        …from Cursor history
+  npx seed-protocol-mcp import openclaw      …from an OpenClaw agent's notes (safe on a cron)
   npx seed-protocol-mcp status               check key, API, soul and local brain
 
 Import options: --yes  --local-only  --days N  --path P  --full  --key K

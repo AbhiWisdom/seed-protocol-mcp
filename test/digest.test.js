@@ -99,7 +99,7 @@ test("planUpload skips already-uploaded logs and preferences", async () => {
   const sent = [];
   const fakeApi = { post: async (path, body) => sent.push({ path, body }) };
   const done = await runUpload(fakeApi, brain, "claude-code", plan, { sessions: 2, messages: 10 }, { log: () => {}, pace: 0 });
-  assert.deepEqual(done, { logs: 2, memories: 4 });
+  assert.deepEqual(done, { logs: 2, memories: 4, articles: 0 });
   assert.deepEqual(sent.map((s) => s.path), ["/daily-logs", "/daily-logs", "/remember", "/remember", "/remember", "/remember", "/imports"]);
   assert.equal(sent[0].body.source, "import:claude-code");
   assert.deepEqual(sent[2].body.category, "preference");

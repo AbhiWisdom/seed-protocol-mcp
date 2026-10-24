@@ -46,7 +46,7 @@ describe("first run: build_soul", () => {
     mock.reset();
     const preview = await call(client, "build_soul");
     assert.ok(!preview.isError, preview.content[0].text);
-    assert.match(preview.content[0].text, /Preview only — nothing was uploaded/);
+    assert.match(preview.content[0].text, /Preview only — nothing was saved/);
     const [p] = preview.structuredContent.preview;
     assert.equal(p.source, "OpenClaw");
     assert.deepEqual(p.will_upload, { daily_logs: 2, memories: 2, articles: 2 });

@@ -15,6 +15,7 @@ const HELP = `SEED Protocol MCP v${VERSION}
 
   npx -y seed-protocol-mcp                   start the MCP server (stdio)
   npx seed-protocol-mcp setup <KEY>          add SEED to Claude, Cursor, Windsurf, VS Code
+  npx seed-protocol-mcp setup --local        same, but the soul stays on this machine (no account)
   npx seed-protocol-mcp import claude-code   build your local brain from Claude Code history
   npx seed-protocol-mcp import cursor        …from Cursor history
   npx seed-protocol-mcp import openclaw      …from an OpenClaw agent's notes (safe on a cron)

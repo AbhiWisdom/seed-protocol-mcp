@@ -8,16 +8,16 @@
 import { existsSync, mkdirSync, readFileSync, realpathSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { DASHBOARD_URL, DEFAULT_API_URL, editorConfigPaths, saveConfig } from "./config.js";
+import { DASHBOARD_URL, DEFAULT_API_URL, editorConfigPaths, saveConfig, seedHome } from "./config.js";
 
 const SERVER_NAME = "seed-protocol";
 
 /** MCP server entry injected into each client config (unchanged since 2.2). */
-export function getMcpConfig(apiKey) {
+export function getMcpConfig(apiKey, { local = false } = {}) {
   return {
     command: "npx",
     args: ["-y", "seed-protocol-mcp@latest"],
-    env: { SEED_API_KEY: apiKey, SEED_API_URL: DEFAULT_API_URL },
+    env: local ? { SEED_MODE: "local" } : { SEED_API_KEY: apiKey, SEED_API_URL: DEFAULT_API_URL },
   };
 }
 
@@ -42,6 +42,7 @@ function setupEditor(path, mcpConfig) {
 }
 
 const SETUP_USAGE = `Usage: npx seed-protocol-mcp setup YOUR_API_KEY
+       npx seed-protocol-mcp setup --local    keep the soul on this machine only (no account, nothing sent)
 
 Get your API key from your dashboard: ${DASHBOARD_URL}
 Or set environment variable: SEED_API_KEY=your_key`;
@@ -57,6 +58,7 @@ export function runSetup(args, { log = console.log } = {}) {
     log(SETUP_USAGE);
     return 0;
   }
+  if (arg === "--local") return runLocalSetup(log);
   if (arg?.startsWith("-")) {
     log(`Bad option: ${arg}\n\n${SETUP_USAGE}`);
     return 1;
@@ -69,6 +71,29 @@ export function runSetup(args, { log = console.log } = {}) {
   }
 
   const mcpConfig = getMcpConfig(apiKey);
+  const { found, configured } = configureEditors(mcpConfig, log);
+
+  try {
+    const saved = saveConfig({ api_key: apiKey, api_url: DEFAULT_API_URL, mode: "online" });
+    log(`\n  Key saved for CLI commands (import, status): ${saved}`);
+  } catch {
+    log("\n  Could not save the key for CLI commands — pass --key to import/status instead.");
+  }
+  return finish(found, configured, mcpConfig, log, false);
+}
+
+/** Local-only: the soul lives in ~/.seed/soul.sqlite; no key, no account, nothing sent. */
+function runLocalSetup(log) {
+  log("\n🧬 SEED Protocol — local-only setup\n");
+  const mcpConfig = getMcpConfig(null, { local: true });
+  const { found, configured } = configureEditors(mcpConfig, log);
+  saveConfig({ mode: "local" });
+  log(`\n  Your soul will live in ${join(seedHome(), "soul.sqlite")} — nothing is sent to SEED.`);
+  log("  Switch to the online dashboard any time: npx seed-protocol-mcp setup YOUR_API_KEY");
+  return finish(found, configured, mcpConfig, log, true);
+}
+
+function configureEditors(mcpConfig, log) {
   let configured = 0;
   let found = 0;
   log("Scanning for code editors...\n");
@@ -86,23 +111,20 @@ export function runSetup(args, { log = console.log } = {}) {
       log(`  ⬜ ${editor.name} — not installed`);
     }
   }
+  return { found, configured };
+}
 
-  try {
-    const saved = saveConfig({ api_key: apiKey, api_url: DEFAULT_API_URL });
-    log(`\n  Key saved for CLI commands (import, status): ${saved}`);
-  } catch {
-    log("\n  Could not save the key for CLI commands — pass --key to import/status instead.");
-  }
-
+function finish(found, configured, mcpConfig, log, local) {
   log("\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
   log(`Found: ${found} editors | Configured: ${configured}`);
   if (configured > 0) {
     log("\n🎉 Done! Restart your editor to activate your soul.");
     log("   The AI loads your soul (load_soul) at the start of each conversation.");
-    log("\n   Tools: load_soul · remember · recall · correct · evolve_soul · get_soul_state");
+    log("\n   Tools: load_soul · build_soul · remember · recall · correct · evolve_soul · get_soul_state");
     log("          daily_log · kb_write · kb_search · history_search (local) · get_skills");
-    log("\n   Next: build your soul from past sessions (stays local until you say yes):");
-    log("     npx seed-protocol-mcp import claude-code");
+    log("\n   In your first chat the AI offers build_soul: it reads your past sessions on this machine,");
+    log(local ? "   shows a preview, and saves only what you approve — into the local soul file."
+      : "   shows a preview, and uploads only what you approve. Terminal: npx seed-protocol-mcp import claude-code");
   } else {
     log("\n⚠️  No supported editors found.");
     log("   Manually add this to your MCP config:\n");

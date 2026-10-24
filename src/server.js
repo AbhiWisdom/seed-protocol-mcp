@@ -6,7 +6,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { createApi } from "./api.js";
-import { DASHBOARD_URL, VERSION, resolveAuth } from "./config.js";
+import { DASHBOARD_URL, VERSION, localMode, resolveAuth } from "./config.js";
 import { registerBootstrapPrompt } from "./features/bootstrap.js";
 import { registerBuildTool } from "./features/build.js";
 import { registerHistoryTools } from "./features/history.js";
@@ -14,6 +14,7 @@ import { registerJournalTools } from "./features/journal.js";
 import { registerMemoryTools } from "./features/memory.js";
 import { registerSkillTools } from "./features/skills.js";
 import { registerSoulTools } from "./features/soul.js";
+import { createLocalApi, soulPath } from "./local/store.js";
 
 const INSTRUCTIONS = [
   "SEED gives the user's AI a persistent soul.",
@@ -37,6 +38,12 @@ export function createServer(api) {
 }
 
 export async function startServer() {
+  if (localMode()) {
+    const server = createServer(createLocalApi());
+    await server.connect(new StdioServerTransport());
+    console.error(`SEED Protocol MCP v${VERSION} running — local-only: soul in ${soulPath()}, nothing leaves this machine`);
+    return server;
+  }
   const auth = resolveAuth();
   if (!auth.apiKey) {
     console.error(`SEED_API_KEY not set — get your key at ${DASHBOARD_URL}, then run: npx seed-protocol-mcp setup <KEY>`);

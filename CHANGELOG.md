@@ -1,5 +1,17 @@
 # Changelog
 
+## 2.7.0 — 2026-10-24
+
+**Local-only mode — trust no server.**
+
+### Added
+- `setup --local` (or `SEED_MODE=local`): the soul lives in `~/.seed/soul.sqlite` on your machine and the connector never calls the SEED server — no account, no API key. Every tool works the same, `build_soul` and `import … --yes` save into the local soul. `SEED_MODE=online` overrides a saved local setup.
+- `status` shows the mode and the local soul's counts.
+
+### Changed
+- `setup <KEY>` records `mode: online`, so switching back from local is one command.
+- README links the plain-words privacy and security pages.
+
 ## 2.6.0 — 2026-10-21
 
 **Connect it, and the first chat builds your soul.**

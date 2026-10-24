@@ -51,9 +51,12 @@ async function buildSoul(api, { upload = false, sources, days }) {
     brain.save();
     if (!runs.length) return ok({ up_to_date: true, checked: picked }, "Everything on this machine is already in the soul — nothing new to upload.");
     if (!upload) {
+      const privacy = api.local
+        ? "Local-only mode: nothing leaves this machine — this only saves summaries into the local soul file."
+        : "Raw history stays on this machine. Only these summaries, notes and memories would be uploaded.";
       return ok(
-        { preview: runs.map(preview), privacy: "Raw history stays on this machine. Only these summaries, notes and memories would be uploaded." },
-        "Preview only — nothing was uploaded. Show the user what was found and ask whether to add it to their SEED soul. If they say yes, call build_soul again with upload=true.",
+        { preview: runs.map(preview), privacy },
+        "Preview only — nothing was saved. Show the user what was found and ask whether to add it to their SEED soul. If they say yes, call build_soul again with upload=true.",
       );
     }
     let budget = BATCH;
@@ -69,7 +72,7 @@ async function buildSoul(api, { upload = false, sources, days }) {
     }
     const note = remaining
       ? `Uploaded one batch; ${remaining} items left. Wait about a minute (rate limit), then call build_soul with upload=true again.`
-      : `Soul built. The user can see it at ${DASHBOARD_URL}. Continue with their request.`;
+      : `Soul built${api.local ? " (local-only, on this machine)" : `. The user can see it at ${DASHBOARD_URL}`}. Continue with their request.`;
     return ok({ uploaded, remaining, dashboard: DASHBOARD_URL }, note);
   } finally {
     brain.save();

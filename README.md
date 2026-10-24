@@ -39,6 +39,14 @@ Every AI forgets you when the session ends. Your preferences, your stack, the mi
    npx seed-protocol-mcp import claude-code
    ```
 
+### Local-only mode — no account, nothing sent
+
+```bash
+npx seed-protocol-mcp setup --local
+```
+
+Every tool works the same, but the soul lives in `~/.seed/soul.sqlite` on your machine and the connector never calls the SEED server. No API key, no dashboard. Switch to online later with `setup YOUR_API_KEY`. (Same thing by hand: set `SEED_MODE=local` in the MCP config's `env`.)
+
 <details>
 <summary><strong>Manual MCP config</strong></summary>
 
@@ -107,6 +115,8 @@ Re-running an import is safe: messages are stored once, and digests, memories an
 
 ## Privacy
 
+Plain-words policy: **[seed.abhibots.com/privacy](https://seed.abhibots.com/privacy)** · security: [seed.abhibots.com/security](https://seed.abhibots.com/security). On the server, everything you keep is encrypted at rest with a key derived from your API key.
+
 - **Raw history stays local.** Imports write to `~/.seed/brain.sqlite` (owner-only permissions). `history_search` reads only that file and makes no network request. Delete the file to wipe it.
 - **Nothing is uploaded without consent.** After an import you see a summary and the question `Upload N daily logs and M preference memories to your SEED dashboard? (y/N)`. Only `y` (or `--yes`) uploads. `--local-only` never does. In chat, `build_soul` shows the same preview and the AI must ask you before calling it with `upload=true`.
 - **What gets uploaded (only after yes):**
@@ -124,7 +134,8 @@ Re-running an import is safe: messages are stored once, and digests, memories an
 |---------|---------|---------|
 | `SEED_API_KEY` | — | Your key from the dashboard |
 | `SEED_API_URL` | `https://seed.abhibots.com` | API base URL |
-| `SEED_HOME` | `~/.seed` | Local brain + CLI config location |
+| `SEED_HOME` | `~/.seed` | Local brain, local soul (local-only mode) and CLI config |
+| `SEED_MODE` | — | `local` = local-only mode (nothing sent); `online` overrides a saved `setup --local` |
 | `CLAUDE_CONFIG_DIR` | `~/.claude` | Where `import claude-code` looks for `projects/` |
 | `OPENCLAW_PROFILE` | — | `import openclaw` reads `~/.openclaw-<profile>/workspace` instead of `~/.openclaw/workspace` |
 

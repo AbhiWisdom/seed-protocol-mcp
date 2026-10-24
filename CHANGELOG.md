@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.8.1 — 2026-10-24
+
+### Fixed
+- Secret scrubber: generic service keys (`prefix_longtoken`, e.g. `nb_…`, `xx_live_…`) are now redacted.
+- History import: a sentence that held a secret is never offered as a preference memory.
+- History import: long pasted prompts/docs (over 1,500 characters), tagged system text, headings, labels, tables and "Step …" lines are no longer mistaken for the user's own preferences.
+
 ## 2.8.0 — 2026-10-24
 
 **Hybrid mode — one soul across your devices, synced on your terms.**

@@ -109,3 +109,23 @@ test("planUpload skips already-uploaded logs and preferences", async () => {
   assert.deepEqual([again.logs.length, again.memories.length], [0, 0]);
   brain.close();
 });
+
+test("isPreference rejects headings, labels, tables and step lines", () => {
+  for (const s of ["## Always read state first", "Send pattern (always file-based, never inline):", "| never | always |", "Step 3 — never skip the backup"]) {
+    assert.equal(isPreference(s), false, s);
+  }
+});
+
+test("extractPreferences ignores long pastes, tagged system text and secret-bearing lines", async () => {
+  const { openBrain } = await import("../src/brain/db.js");
+  const brain = await openBrain(null);
+  brain.run("INSERT INTO sessions (id, source, project, messages) VALUES ('s1', 'claude-code', 'p', 4)");
+  const add = (id, text) => brain.run("INSERT INTO messages (id, session_id, role, ts, text) VALUES (?, 's1', 'user', '2026-10-01T00:00:00Z', ?)", [id, text]);
+  add("m1", "Always reply in Hinglish, never formal English.");
+  add("m2", `${"Routine prompt line. ".repeat(80)}Always reply in ENGLISH only.`);
+  add("m3", "<task-notification>Never restart the gateway.</task-notification>");
+  add("m4", `Never expire this key ${["nb", "_", "7f09cc7dd083384b755f7ab7d9043dc0"].join("")} please.`);
+  const texts = extractPreferences(brain, "claude-code").map((p) => p.text);
+  assert.deepEqual(texts, ["Always reply in Hinglish, never formal English."]);
+});
+

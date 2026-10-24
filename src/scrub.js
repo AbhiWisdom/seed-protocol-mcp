@@ -35,6 +35,12 @@ const RULES = [
     keepPrefix: true,
   },
   {
+    // Generic service keys: short prefix + long random token, e.g. nb_7f09…, abhi_live_…, vg_…
+    type: "api_key",
+    re: new RegExp(`${B}[a-z]{2,8}_(?:live_|test_)?[A-Za-z0-9]{24,}(?![A-Za-z0-9])`, "g"),
+    keep: (m) => /[0-9]/.test(m.slice(m.indexOf("_") + 1)),
+  },
+  {
     // api_key = "...", "password": "...", SECRET: ..., access_token=...
     type: "secret",
     re: /((?:api[_-]?key|secret|token|passw(?:or)?d)["']?\s*[:=]\s*["']?)(?!\[REDACTED)([^\s"'`,;]{8,})/gi,

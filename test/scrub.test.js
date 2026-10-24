@@ -84,3 +84,11 @@ test("covers every required secret type", () => {
     assert.ok(SECRET_TYPES.includes(t), t);
   }
 });
+
+test("generic service keys (prefix_longtoken) are redacted, snake_case prose is not", () => {
+  const nano = ["nb", "_", "7f09cc7dd083384b755f7ab7d9043dc0"].join("");
+  const live = ["abhi", "_live_", "A1b2C3d4E5f6G7h8J9k0L1m2N3p4"].join("");
+  assert.equal(scrub(`key ${nano} here`), "key [REDACTED:api_key] here");
+  assert.equal(scrub(live), "[REDACTED:api_key]");
+  for (const ok of ["memory_search_enabled", "use_memory_search_when_offline_always", "snake_case_identifier_without_digits_here"]) assert.equal(scrub(ok), ok);
+});

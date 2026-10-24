@@ -88,10 +88,16 @@ export function sentences(text) {
   return out;
 }
 
+// Real preferences are typed in short messages. Long pastes (prompts, skills, docs) and
+// tagged system messages are someone else's instructions, not the user's taste.
+const MAX_SOURCE_CHARS = 1500;
+const isPaste = (text) => text.length > MAX_SOURCE_CHARS || /^\s*</.test(text) || (text.match(/^#{1,6}\s/gm) || []).length >= 2;
+const STRUCTURE = /^#{1,6}\s|:\s*$|\|.*\||^(step|block|rule|phase)\b/i;
+
 /** Is this sentence a plausible durable preference? */
 export function isPreference(sentence) {
   const s = sentence.trim();
-  if (s.length < 12 || s.length > 240) return false;
+  if (s.length < 12 || s.length > 240 || STRUCTURE.test(s)) return false;
   if (s.endsWith("?") || s.includes("[REDACTED") || CODE_LIKE.test(s)) return false;
   if (s.split(/\s+/).length < 3) return false;
   return PREFERENCE_CUE.test(s);
@@ -108,15 +114,19 @@ export function extractPreferences(brain, source, { limit = MAX_PREFS } = {}) {
       WHERE s.source = ? AND m.role = 'user' ORDER BY m.ts`,
     [source],
     (row) => {
-      for (const sentence of sentences(row.text)) {
+      if (!row.text || isPaste(row.text)) return;
+      for (const raw of sentences(row.text)) {
+        const sentence = raw.replace(/\*\*|__/g, "").trim();
         if (!isPreference(sentence)) continue;
+        const clean = scrub(sentence);
+        if (clean.includes("[REDACTED")) continue; // a sentence that held a secret is never a memory
         const key = norm(sentence);
         const hit = found.get(key);
         if (hit) {
           hit.count++;
           hit.last_seen = row.ts || hit.last_seen;
         } else {
-          found.set(key, { text: scrub(sentence), count: 1, last_seen: row.ts || null });
+          found.set(key, { text: clean, count: 1, last_seen: row.ts || null });
         }
       }
     },

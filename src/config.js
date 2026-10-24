@@ -10,7 +10,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync, chmodSync } from "n
 import { homedir, platform } from "node:os";
 import { dirname, join } from "node:path";
 
-export const VERSION = "2.7.0";
+export const VERSION = "2.8.0";
 export const DEFAULT_API_URL = "https://seed.abhibots.com";
 export const DASHBOARD_URL = "https://seed.abhibots.com/login";
 
@@ -59,9 +59,15 @@ export function saveConfig(patch) {
  * SEED_MODE=local|online wins; otherwise what `setup --local` saved.
  */
 export function localMode() {
+  return seedMode() === "local";
+}
+
+/** "online" (default) · "local" (nothing sent) · "hybrid" (this device + what the user chose to sync). */
+export function seedMode() {
   const env = process.env.SEED_MODE;
-  if (env) return env === "local";
-  return readSavedConfig().mode === "local";
+  if (["local", "hybrid", "online"].includes(env)) return env;
+  const saved = readSavedConfig().mode;
+  return ["local", "hybrid"].includes(saved) ? saved : "online";
 }
 
 /** MCP client config files `setup` writes into (shared with setup.js). */

@@ -39,6 +39,14 @@ Every AI forgets you when the session ends. Your preferences, your stack, the mi
    npx seed-protocol-mcp import claude-code
    ```
 
+### Hybrid mode — one soul on every device, synced on your terms
+
+```bash
+npx seed-protocol-mcp setup --hybrid YOUR_API_KEY
+```
+
+The soul lives on this machine, and only the parts you tick in the dashboard (Privacy → **Devices & sync**: memories, corrections, traits, knowledge, daily logs) are copied to your cloud soul — so your laptop, a VPS agent and every AI tool share them. Reads merge both. Offline is fine: writes wait locally and go up at the next start or with `npx seed-protocol-mcp sync`.
+
 ### Local-only mode — no account, nothing sent
 
 ```bash
@@ -135,7 +143,7 @@ Plain-words policy: **[seed.abhibots.com/privacy](https://seed.abhibots.com/priv
 | `SEED_API_KEY` | — | Your key from the dashboard |
 | `SEED_API_URL` | `https://seed.abhibots.com` | API base URL |
 | `SEED_HOME` | `~/.seed` | Local brain, local soul (local-only mode) and CLI config |
-| `SEED_MODE` | — | `local` = local-only mode (nothing sent); `online` overrides a saved `setup --local` |
+| `SEED_MODE` | — | `local` = nothing sent · `hybrid` = this device + what you sync · `online` overrides a saved setup |
 | `CLAUDE_CONFIG_DIR` | `~/.claude` | Where `import claude-code` looks for `projects/` |
 | `OPENCLAW_PROFILE` | — | `import openclaw` reads `~/.openclaw-<profile>/workspace` instead of `~/.openclaw/workspace` |
 

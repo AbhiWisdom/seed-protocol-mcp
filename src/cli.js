@@ -16,6 +16,8 @@ const HELP = `SEED Protocol MCP v${VERSION}
   npx -y seed-protocol-mcp                   start the MCP server (stdio)
   npx seed-protocol-mcp setup <KEY>          add SEED to Claude, Cursor, Windsurf, VS Code
   npx seed-protocol-mcp setup --local        same, but the soul stays on this machine (no account)
+  npx seed-protocol-mcp setup --hybrid <KEY> soul on this machine + sync the parts you choose
+  npx seed-protocol-mcp sync                 hybrid: send items that waited while offline
   npx seed-protocol-mcp import claude-code   build your local brain from Claude Code history
   npx seed-protocol-mcp import cursor        …from Cursor history
   npx seed-protocol-mcp import openclaw      …from an OpenClaw agent's notes (safe on a cron)
@@ -64,6 +66,15 @@ async function main(argv) {
       }
       const { runImport } = await import("./import/command.js");
       return runImport(positional, flags);
+    }
+    case "sync": {
+      const { flags } = parseArgs(rest);
+      if (flags.help) {
+        console.log(HELP);
+        return 0;
+      }
+      const { runSync } = await import("./sync.js");
+      return runSync(flags);
     }
     case "status": {
       const { flags } = parseArgs(rest);

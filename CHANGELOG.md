@@ -1,5 +1,14 @@
 # Changelog
 
+## 2.8.0 — 2026-10-24
+
+**Hybrid mode — one soul across your devices, synced on your terms.**
+
+### Added
+- `setup --hybrid <KEY>` (or `SEED_MODE=hybrid`): the soul lives on this device (`~/.seed/soul.sqlite`) and the types you tick in the dashboard (Privacy → Devices & sync: memories, corrections, traits, knowledge, daily logs) are copied to your cloud soul, so your other machines and tools — a laptop, a VPS agent — see them. Reads merge this device and the cloud, de-duplicated.
+- Offline-safe: writes always land locally first; anything the cloud missed goes up at the next server start or with `npx seed-protocol-mcp sync`. Turning a type on later sends what was kept locally. Nothing is sent twice.
+- `status` in hybrid shows what syncs and what is waiting.
+
 ## 2.7.0 — 2026-10-24
 
 **Local-only mode — trust no server.**

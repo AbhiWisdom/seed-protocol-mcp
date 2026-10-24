@@ -5,10 +5,11 @@
 
 import { existsSync, statSync } from "node:fs";
 import { createApi } from "./api.js";
-import { DASHBOARD_URL, VERSION, brainPath, localMode, maskKey, resolveAuth } from "./config.js";
+import { DASHBOARD_URL, VERSION, brainPath, maskKey, resolveAuth, seedMode } from "./config.js";
 import { openBrain } from "./brain/db.js";
 import { brainCounts } from "./brain/store.js";
 import { createLocalApi, soulPath } from "./local/store.js";
+import { createModeApi } from "./modeApi.js";
 
 const mb = (bytes) => `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 
@@ -22,9 +23,23 @@ async function localStatus(log) {
 export async function runStatus(flags = {}, { log = console.log } = {}) {
   let exit = 0;
   log(`\nSEED Protocol MCP v${VERSION} — status\n`);
-  if (localMode()) await localStatus(log);
+  const mode = seedMode();
+  if (mode === "local") await localStatus(log);
   else exit = await onlineStatus(flags, log);
+  if (mode === "hybrid") await hybridStatus(flags, log);
   return brainStatus(log, exit);
+}
+
+async function hybridStatus(flags, log) {
+  const { api, mode } = createModeApi({ key: flags.key, url: flags.api, searchEditors: true });
+  if (mode !== "hybrid") return;
+  const { counts: c } = await createLocalApi().get("/state");
+  const [policy, waiting] = await Promise.all([api.policy(), api.pendingCounts()]);
+  log("  Mode:        hybrid — soul on this device, synced as chosen in the dashboard");
+  log(`  Local soul:  ${soulPath()} · ${c.memories} memories · ${c.corrections} corrections · ${c.daily_logs} daily logs · ${c.kb} articles`);
+  log(`  Syncing:     ${Object.entries(policy).filter(([, on]) => on).map(([t]) => t).join(", ") || "nothing"}`);
+  const n = Object.values(waiting).reduce((a, b) => a + b, 0);
+  if (n) log(`  Waiting:     ${n} items not yet in the cloud — run: npx seed-protocol-mcp sync`);
 }
 
 async function onlineStatus(flags, log) {

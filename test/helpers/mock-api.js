@@ -17,6 +17,7 @@ export async function startMockApi({ key = TEST_KEY, soul = { id: SOUL_ID, name:
     logs: [],
     kb: [{ id: "k1", title: "Deploy guide", body: "pm2 deploy steps", tags: ["deploy"], auto: false, updated_at: "2026-10-01T00:00:00Z" }],
     imports: [],
+    sync: { memories: true, corrections: true, traits: true, kb: false, daily_logs: false },
     vasanas: [{ trait_name: "concise", description: "Likes short answers", intensity: 0.8, seen: 3 }],
   };
   if (fresh) Object.assign(state, { memories: [], corrections: [], kb: [] });
@@ -45,6 +46,10 @@ export async function startMockApi({ key = TEST_KEY, soul = { id: SOUL_ID, name:
     const p = url.pathname;
     if (req.method === "GET" && p === "/api/v1/me") {
       return send(200, { user_id: "u1", email: "test@example.com", name: "Tester", plan: "free", api_key: key, soul: soul ? { ...soul, created_at: "x", updated_at: "y" } : null, memories_count: state.memories.length });
+    }
+    if (p === "/api/v1/me/sync") {
+      if (req.method === "PUT") state.sync = { ...state.sync, ...body };
+      return send(200, { policy: state.sync });
     }
     if (req.method === "GET" && p === "/api/v1/skills") {
       return send(200, { total: 3, categories: { frontend: [{ name: "react", description: "React", auto_apply: true }, { name: "css", description: "CSS" }], backend: [{ name: "fastapi", description: "FastAPI" }] } });

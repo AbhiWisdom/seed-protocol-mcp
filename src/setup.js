@@ -13,12 +13,10 @@ import { DASHBOARD_URL, DEFAULT_API_URL, editorConfigPaths, saveConfig, seedHome
 const SERVER_NAME = "seed-protocol";
 
 /** MCP server entry injected into each client config (unchanged since 2.2). */
-export function getMcpConfig(apiKey, { local = false } = {}) {
-  return {
-    command: "npx",
-    args: ["-y", "seed-protocol-mcp@latest"],
-    env: local ? { SEED_MODE: "local" } : { SEED_API_KEY: apiKey, SEED_API_URL: DEFAULT_API_URL },
-  };
+export function getMcpConfig(apiKey, { local = false, hybrid = false } = {}) {
+  const env = local ? { SEED_MODE: "local" } : { SEED_API_KEY: apiKey, SEED_API_URL: DEFAULT_API_URL };
+  if (hybrid) env.SEED_MODE = "hybrid";
+  return { command: "npx", args: ["-y", "seed-protocol-mcp@latest"], env };
 }
 
 function setupEditor(path, mcpConfig) {
@@ -43,6 +41,7 @@ function setupEditor(path, mcpConfig) {
 
 const SETUP_USAGE = `Usage: npx seed-protocol-mcp setup YOUR_API_KEY
        npx seed-protocol-mcp setup --local    keep the soul on this machine only (no account, nothing sent)
+       npx seed-protocol-mcp setup --hybrid YOUR_API_KEY   soul on this machine + sync what you choose
 
 Get your API key from your dashboard: ${DASHBOARD_URL}
 Or set environment variable: SEED_API_KEY=your_key`;
@@ -59,6 +58,7 @@ export function runSetup(args, { log = console.log } = {}) {
     return 0;
   }
   if (arg === "--local") return runLocalSetup(log);
+  if (arg === "--hybrid") return runHybridSetup(args[2] || process.env.SEED_API_KEY, log);
   if (arg?.startsWith("-")) {
     log(`Bad option: ${arg}\n\n${SETUP_USAGE}`);
     return 1;
@@ -91,6 +91,21 @@ function runLocalSetup(log) {
   log(`\n  Your soul will live in ${join(seedHome(), "soul.sqlite")} — nothing is sent to SEED.`);
   log("  Switch to the online dashboard any time: npx seed-protocol-mcp setup YOUR_API_KEY");
   return finish(found, configured, mcpConfig, log, true);
+}
+
+/** Hybrid: soul on this device; the types ticked in the dashboard are copied to the cloud. */
+function runHybridSetup(apiKey, log) {
+  log("\n🧬 SEED Protocol — hybrid setup\n");
+  if (!apiKey || apiKey.startsWith("-")) {
+    log(SETUP_USAGE);
+    return 1;
+  }
+  const mcpConfig = getMcpConfig(apiKey, { hybrid: true });
+  const { found, configured } = configureEditors(mcpConfig, log);
+  saveConfig({ api_key: apiKey, api_url: DEFAULT_API_URL, mode: "hybrid" });
+  log(`\n  Your soul lives in ${join(seedHome(), "soul.sqlite")}. What syncs to the cloud is your choice:`);
+  log(`  ${DASHBOARD_URL.replace("/login", "/dashboard?tab=privacy")} → Devices & sync. Push waiting items: npx seed-protocol-mcp sync`);
+  return finish(found, configured, mcpConfig, log, false);
 }
 
 function configureEditors(mcpConfig, log) {

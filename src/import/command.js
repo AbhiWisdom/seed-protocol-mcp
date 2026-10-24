@@ -7,11 +7,11 @@
  * 3. Upload only what changed since the last run, so it is safe on a cron.
  */
 
-import { DASHBOARD_URL, brainPath, localMode, resolveAuth } from "../config.js";
-import { createApi } from "../api.js";
+import { DASHBOARD_URL, brainPath, resolveAuth, seedMode } from "../config.js";
+import { createModeApi } from "../modeApi.js";
 import { openBrain } from "../brain/db.js";
 import { SOURCES, prepare } from "./pipeline.js";
-import { createLocalApi, soulPath } from "../local/store.js";
+import { soulPath } from "../local/store.js";
 import { askYesNo, planSize, runUpload } from "./upload.js";
 
 export const IMPORT_USAGE = `Usage: npx seed-protocol-mcp import <claude-code|cursor|openclaw> [options]
@@ -88,8 +88,10 @@ export async function runImport(args, flags = {}, io = {}) {
       log("Your SEED dashboard is already up to date — nothing new to upload.");
       return 0;
     }
-    const local = localMode();  // local-only: "upload" means saving into ~/.seed/soul.sqlite
-    const auth = local ? null : resolveAuth({ key: flags.key, url: flags.api, searchEditors: true });
+    const mode = seedMode(); // local: saved into ~/.seed/soul.sqlite · hybrid: there + synced per dashboard choice
+    const local = mode === "local";
+    const authOpts = { key: flags.key, url: flags.api, searchEditors: true };
+    const auth = local ? null : resolveAuth(authOpts);
     if (!local && !auth.apiKey) {
       log(`No SEED API key found, so nothing was uploaded.\nGet your key at ${DASHBOARD_URL}, run: npx seed-protocol-mcp setup <KEY>, then re-run this import.`);
       return 0;
@@ -97,7 +99,9 @@ export async function runImport(args, flags = {}, io = {}) {
     const what = source === "openclaw"
       ? `${plan.logs.length} daily logs, ${plan.memories.length} memories and ${plan.articles.length} knowledge articles`
       : `${plan.logs.length} daily logs and ${plan.memories.length} preference memories`;
-    const question = local ? `Save ${what} to your local soul? (y/N)` : `Upload ${what} to your SEED dashboard? (y/N)`;
+    const question = local ? `Save ${what} to your local soul? (y/N)`
+      : mode === "hybrid" ? `Save ${what} to your soul (this device, synced as set in your dashboard)? (y/N)`
+        : `Upload ${what} to your SEED dashboard? (y/N)`;
     if (flags.yes) log(`${question} yes (--yes)`);
     const yes = flags.yes || (await askYesNo(question, io));
     if (!yes) {
@@ -105,11 +109,13 @@ export async function runImport(args, flags = {}, io = {}) {
       return 0;
     }
     try {
-      const done = await runUpload(local ? createLocalApi() : createApi(auth), brain, source, plan, run.totals, { log });
+      const done = await runUpload(createModeApi(authOpts).api, brain, source, plan, run.totals, { log });
       const sent = source === "openclaw"
         ? `${done.logs} daily logs, ${done.memories} memories and ${done.articles} knowledge articles`
         : `${done.logs} daily logs and ${done.memories} preference memories`;
-      log(local ? `Saved ${sent} to your local soul (${soulPath()}). Nothing left this machine.` : `Uploaded ${sent}. Open ${DASHBOARD_URL} to see them.`);
+      log(local ? `Saved ${sent} to your local soul (${soulPath()}). Nothing left this machine.`
+        : mode === "hybrid" ? `Saved ${sent} on this device; the types you sync were copied to the cloud too.`
+          : `Uploaded ${sent}. Open ${DASHBOARD_URL} to see them.`);
       return 0;
     } catch (e) {
       err(`Upload stopped: [${e.code || "ERROR"}] ${e.message}\nRe-run the same command to resume — finished items are not sent twice.`);

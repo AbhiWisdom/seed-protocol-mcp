@@ -1,5 +1,21 @@
 # Changelog
 
+## 2.9.0 — 2026-10-26
+
+**The AI is the soul — and it can work in your workspace.**
+
+### Added
+- `load_soul` reads the SEED brief (`GET /api/v1/me/brief`): who the AI is and how it speaks, who you are, the rules, personal-first memories, the last log and the workspace — one call, the same brief the remote MCP and ChatGPT get. The AI is told to speak as the soul, not as a generic assistant. Hybrid adds this device's memories and rules the cloud has not got yet. Local-only mode, an older API, or hybrid while offline still build it from separate calls.
+- Workspace tools: `ws_tree`, `ws_read`, `ws_write` (with `base_version`, so a stale edit gets a 409 instead of overwriting), `ws_mkdir`, `ws_move`, `ws_archive` (an AI never deletes).
+- `search`: one search across rules, memories, workspace documents and the sessions you brought into SEED.
+- `send_report` / `my_reports`: tell the SEED team about a bug or an idea, with your OK.
+- Every request names the app (`X-Seed-Client`, from the MCP client's own name), so the soul knows which app wrote what.
+
+### Changed
+- `daily_log` is saved under the app's name (`claude-code`, `cursor`…) instead of `mcp`, so two apps never overwrite each other's day. Impossible days (`2026-13-45`, `2026-02-30`) and days after tomorrow are refused before anything is sent.
+- `remember` takes up to 5,000 characters — what the API stores (10,000 used to fail at the API).
+- Links to the dashboard follow the API you use (`<api url>/login`); `SEED_DASHBOARD_URL` overrides.
+
 ## 2.8.1 — 2026-10-24
 
 ### Fixed

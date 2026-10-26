@@ -4,12 +4,13 @@
  */
 
 import { createServer } from "node:http";
+import { meRoute, seedRoute } from "./mock-v29.js";
 
 export const TEST_KEY = ["seed", "_", "a1b2c3d4e5f60718293a4b5c6d7e8f90"].join("");
 export const SOUL_ID = "soul-test-0001";
 
-/** fresh: a brand-new soul (no memories, corrections or articles) → first_run. */
-export async function startMockApi({ key = TEST_KEY, soul = { id: SOUL_ID, name: "Nova" }, fresh = false } = {}) {
+/** fresh: a brand-new soul (no memories, corrections or articles) → first_run. v29: the 2026-10 routes (mock-v29.js). */
+export async function startMockApi({ key = TEST_KEY, soul = { id: SOUL_ID, name: "Nova" }, fresh = false, v29 = false } = {}) {
   const state = {
     requests: [],
     memories: [{ id: "m1", content: "User deploys with pm2", category: "fact", importance: 0.7, created_at: "2026-10-01T00:00:00Z" }],
@@ -17,6 +18,8 @@ export async function startMockApi({ key = TEST_KEY, soul = { id: SOUL_ID, name:
     logs: [],
     kb: [{ id: "k1", title: "Deploy guide", body: "pm2 deploy steps", tags: ["deploy"], auto: false, updated_at: "2026-10-01T00:00:00Z" }],
     imports: [],
+    reports: [],
+    workspace: {},
     sync: { memories: true, corrections: true, traits: true, kb: false, daily_logs: false },
     vasanas: [{ trait_name: "concise", description: "Likes short answers", intensity: 0.8, seen: 3 }],
   };
@@ -54,12 +57,16 @@ export async function startMockApi({ key = TEST_KEY, soul = { id: SOUL_ID, name:
     if (req.method === "GET" && p === "/api/v1/skills") {
       return send(200, { total: 3, categories: { frontend: [{ name: "react", description: "React", auto_apply: true }, { name: "css", description: "CSS" }], backend: [{ name: "fastapi", description: "FastAPI" }] } });
     }
+    const me29 = v29 && meRoute(req.method, p, body, state, soul);
+    if (me29) return send(...me29);
     const m = p.match(/^\/api\/v1\/seeds\/([^/]+)(\/.*)?$/);
     if (!m) return send(404, { detail: "Not found" });
     const [, sid, sub = ""] = m;
     if (!owned.has(decodeURIComponent(sid))) return send(404, { detail: "Soul not found" });
     const counts = () => ({ memories: state.memories.length, corrections: state.corrections.length, daily_logs: state.logs.length, kb: state.kb.length });
     const route = `${req.method} ${sub}`;
+    const seed29 = v29 && seedRoute(req.method, sub, Object.fromEntries(url.searchParams), body, state);
+    if (seed29) return send(...seed29);
     switch (route) {
       case "GET ":
         return send(200, { id: sid, name: soul.name, personality: { tone: "warm", raksha: { internal: true } }, language: "en", emotional_state: { rasa: "shanta" }, metadata: {}, memories_count: state.memories.length });

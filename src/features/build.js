@@ -6,7 +6,7 @@
  */
 
 import { z } from "zod";
-import { DASHBOARD_URL } from "../config.js";
+import { dashboardUrl } from "../config.js";
 import { openBrain } from "../brain/db.js";
 import { SOURCES, availableSources, prepare } from "../import/pipeline.js";
 import { planSize, runUpload } from "../import/upload.js";
@@ -72,8 +72,8 @@ async function buildSoul(api, { upload = false, sources, days }) {
     }
     const note = remaining
       ? `Uploaded one batch; ${remaining} items left. Wait about a minute (rate limit), then call build_soul with upload=true again.`
-      : `Soul built${api.local ? " (local-only, on this machine)" : `. The user can see it at ${DASHBOARD_URL}`}. Continue with their request.`;
-    return ok({ uploaded, remaining, dashboard: DASHBOARD_URL }, note);
+      : `Soul built${api.local ? " (local-only, on this machine)" : `. The user can see it at ${dashboardUrl(api.apiUrl)}`}. Continue with their request.`;
+    return ok({ uploaded, remaining, dashboard: api.local ? undefined : dashboardUrl(api.apiUrl) }, note);
   } finally {
     brain.save();
     brain.close();

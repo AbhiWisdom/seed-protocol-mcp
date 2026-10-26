@@ -1,6 +1,6 @@
 {
   "name": "seed-protocol-mcp",
-  "version": "2.8.1",
+  "version": "2.9.0",
   "description": "Give your AI a soul — memories, corrections, daily logs and a knowledge base that persist across Claude, Cursor, Windsurf and VS Code. Imports your AI-tool history into a local-first brain.",
   "type": "module",
   "main": "src/index.js",

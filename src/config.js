@@ -10,9 +10,16 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync, chmodSync } from "n
 import { homedir, platform } from "node:os";
 import { dirname, join } from "node:path";
 
-export const VERSION = "2.8.1";
+export const VERSION = "2.9.0";
 export const DEFAULT_API_URL = "https://seed.abhibots.com";
-export const DASHBOARD_URL = "https://seed.abhibots.com/login";
+/** The public SEED dashboard (what 2.8 always printed); dashboardUrl() follows the API this install uses. */
+export const DASHBOARD_URL = `${DEFAULT_API_URL}/login`;
+
+/** Sign-in page of the SEED this install talks to: SEED_DASHBOARD_URL, else <api url>/login. */
+export function dashboardUrl(apiUrl) {
+  if (process.env.SEED_DASHBOARD_URL) return process.env.SEED_DASHBOARD_URL;
+  return `${(apiUrl || process.env.SEED_API_URL || readSavedConfig().api_url || DEFAULT_API_URL).replace(/\/+$/, "")}/login`;
+}
 
 /** Directory that holds the local brain + CLI config (~/.seed by default). */
 export function seedHome() {

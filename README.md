@@ -78,7 +78,7 @@ Every tool works the same, but the soul lives in `~/.seed/soul.sqlite` on your m
 
 | Tool | When the AI uses it |
 |------|---------------------|
-| `load_soul` | First thing in every conversation — identity, personality, live state, 10 recent memories, active corrections (never repeat), today's log status, knowledge-base size. On a new soul it returns `first_run` |
+| `load_soul` | First thing in every conversation — who the AI is (it speaks as the soul, not as a generic assistant), who you are, the rules (corrections it must never repeat), your strongest and newest memories, the last log and your workspace. On a new soul it returns `first_run` |
 | `build_soul` | First job on a new soul (or when you ask to import) — builds it from this machine's history: preview first, upload only after you agree, re-runs send only what changed |
 | `get_soul_state` | Current emotional state, learned traits and counts |
 | `evolve_soul` | Record a stable behaviour pattern as a trait (e.g. `likes-concise-answers`) |
@@ -86,10 +86,15 @@ Every tool works the same, but the soul lives in `~/.seed/soul.sqlite` on your m
 | `recall` | Search saved memories (hybrid keyword + semantic) |
 | `correct` | The user corrected the AI — saved forever, escalates if repeated |
 | `get_skills` | List the skills attached to the soul, by category |
-| `daily_log` | End of a meaningful session — what was done, decisions, next steps |
+| `daily_log` | End of a meaningful session — what was done, decisions, next steps. Saved under the app's own name (`claude-code`, `cursor`…), so two apps never overwrite each other |
 | `kb_write` | Save reusable know-how as a knowledge-base article |
 | `kb_search` | Read knowledge-base articles |
 | `history_search` | Search your past AI sessions in the **local** brain — never calls the network |
+| `search` | One search across the whole soul — rules, memories, workspace documents and the sessions you brought into SEED (local-only mode: this machine's memories and notes) |
+| `ws_tree` · `ws_read` · `ws_write` · `ws_mkdir` · `ws_move` · `ws_archive` | Your workspace — Markdown documents in folders that you and your AIs grow together. Edits carry the version they read, so the AI never overwrites your own change; an AI never deletes, it archives |
+| `send_report` · `my_reports` | With your OK, tell the SEED team about a bug or an idea; their replies come back in `load_soul` |
+
+The workspace, `search` over the cloud and reports need online or hybrid mode; in local-only mode those tools say so.
 
 **Prompt:** `seed_bootstrap` — asks the AI to mine your recent local history for durable preferences (`remember`) and past corrections (`correct`), then write today's `daily_log`.
 

@@ -1,13 +1,15 @@
 /**
  * SEED API client — one place for auth, timeouts, error mapping and the
- * "which soul is mine" lookup. Every request carries `X-Api-Key`.
+ * "which soul is mine" lookup. Every request carries `X-Api-Key`, and `X-Seed-Client`
+ * (the MCP client's own name, once it has said hello) so the soul knows which app wrote what.
  *
  * Errors are `ApiError` with a stable `code`:
  *   NO_KEY · NO_SOUL · BAD_REQUEST · UNAUTHORIZED · FORBIDDEN · NOT_FOUND ·
- *   GONE · RATE_LIMITED (retryAfter seconds) · UPSTREAM_ERROR · TIMEOUT · NETWORK
+ *   GONE · RATE_LIMITED (retryAfter seconds) · UPSTREAM_ERROR · TIMEOUT · NETWORK ·
+ *   LOCAL_MODE (a cloud-only tool in local-only mode)
  */
 
-import { DASHBOARD_URL, VERSION } from "./config.js";
+import { VERSION, dashboardUrl } from "./config.js";
 
 export class ApiError extends Error {
   constructor(code, message, { status = 0, retryAfter } = {}) {
@@ -20,11 +22,20 @@ export class ApiError extends Error {
 
 const STATUS_CODES = { 400: "BAD_REQUEST", 401: "UNAUTHORIZED", 403: "FORBIDDEN", 404: "NOT_FOUND", 410: "GONE", 413: "BAD_REQUEST", 422: "BAD_REQUEST", 429: "RATE_LIMITED" };
 
-const HINTS = {
-  UNAUTHORIZED: `API key rejected — copy a fresh key from ${DASHBOARD_URL} and run: npx seed-protocol-mcp setup <KEY>`,
+const hints = (dashboard) => ({
+  UNAUTHORIZED: `API key rejected — copy a fresh key from ${dashboard} and run: npx seed-protocol-mcp setup <KEY>`,
   RATE_LIMITED: "Too many requests — wait a minute and retry.",
   GONE: "This endpoint was retired — update with: npx -y seed-protocol-mcp@latest",
-};
+});
+
+/** An MCP client's self-reported name, as the API accepts it (ASCII, ≤ 40 chars). */
+export const clientLabel = (name) => String(name || "").replace(/[^A-Za-z0-9 ._-]/g, "").slice(0, 40).trim();
+
+/** The cloud side of `api` for tools that only exist there (workspace, search, reports). */
+export function cloudOf(api, tool) {
+  if (api.remote) return api.remote;
+  throw new ApiError("LOCAL_MODE", `${tool} needs your SEED cloud soul — local-only mode keeps memories, rules, logs and notes on this machine. To use it, run: npx seed-protocol-mcp setup <KEY> (online) or setup --hybrid.`);
+}
 
 /** FastAPI `detail` may be a string or a list of validation errors. */
 function detailText(body) {
@@ -44,10 +55,13 @@ function detailText(body) {
 export function createApi({ apiUrl, apiKey, timeoutMs = 15000, fetchImpl = globalThis.fetch }) {
   let mePromise = null;
   let activeSeedId = null;
+  let client = "";
+  const dashboard = dashboardUrl(apiUrl);
+  const HINTS = hints(dashboard);
 
   async function request(path, { method = "GET", body, query } = {}) {
     if (!apiKey) {
-      throw new ApiError("NO_KEY", `SEED_API_KEY not set — get your key from the dashboard at ${DASHBOARD_URL}, then run: npx seed-protocol-mcp setup <KEY>`);
+      throw new ApiError("NO_KEY", `SEED_API_KEY not set — get your key from the dashboard at ${dashboard}, then run: npx seed-protocol-mcp setup <KEY>`);
     }
     let url = `${apiUrl}${path}`;
     if (query) {
@@ -57,6 +71,7 @@ export function createApi({ apiUrl, apiKey, timeoutMs = 15000, fetchImpl = globa
       if (s) url += `?${s}`;
     }
     const headers = { Accept: "application/json", "X-Api-Key": apiKey, "User-Agent": `seed-protocol-mcp/${VERSION}` };
+    if (client) headers["X-Seed-Client"] = client;
     if (body !== undefined) headers["Content-Type"] = "application/json";
     let res;
     try {
@@ -104,7 +119,7 @@ export function createApi({ apiUrl, apiKey, timeoutMs = 15000, fetchImpl = globa
     const info = await me();
     if (!info?.soul?.id) {
       mePromise = null; // they may create one mid-session
-      throw new ApiError("NO_SOUL", `No soul yet — create one at ${DASHBOARD_URL}`);
+      throw new ApiError("NO_SOUL", `No soul yet — create one at ${dashboard}`);
     }
     activeSeedId = info.soul.id;
     return activeSeedId;
@@ -117,16 +132,22 @@ export function createApi({ apiUrl, apiKey, timeoutMs = 15000, fetchImpl = globa
 
   const seedPath = async (suffix = "") => `/api/v1/seeds/${encodeURIComponent(await seedId())}${suffix}`;
 
-  return {
+  const api = {
     request,
     me,
     seedId,
     useSeed,
     hasKey: () => Boolean(apiKey),
     apiUrl,
+    setClient: (name) => { client = clientLabel(name); },
+    client: () => client,
     get: async (suffix, query) => request(await seedPath(suffix), { query }),
     post: async (suffix, body) => request(await seedPath(suffix), { method: "POST", body }),
+    put: async (suffix, body) => request(await seedPath(suffix), { method: "PUT", body }),
+    del: async (suffix, query) => request(await seedPath(suffix), { method: "DELETE", query }),
   };
+  api.remote = api;
+  return api;
 }
 
 /**

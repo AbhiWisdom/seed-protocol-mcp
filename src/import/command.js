@@ -7,7 +7,7 @@
  * 3. Upload only what changed since the last run, so it is safe on a cron.
  */
 
-import { DASHBOARD_URL, brainPath, resolveAuth, seedMode } from "../config.js";
+import { dashboardUrl, brainPath, resolveAuth, seedMode } from "../config.js";
 import { createModeApi } from "../modeApi.js";
 import { openBrain } from "../brain/db.js";
 import { SOURCES, prepare } from "./pipeline.js";
@@ -93,7 +93,7 @@ export async function runImport(args, flags = {}, io = {}) {
     const authOpts = { key: flags.key, url: flags.api, searchEditors: true };
     const auth = local ? null : resolveAuth(authOpts);
     if (!local && !auth.apiKey) {
-      log(`No SEED API key found, so nothing was uploaded.\nGet your key at ${DASHBOARD_URL}, run: npx seed-protocol-mcp setup <KEY>, then re-run this import.`);
+      log(`No SEED API key found, so nothing was uploaded.\nGet your key at ${dashboardUrl()}, run: npx seed-protocol-mcp setup <KEY>, then re-run this import.`);
       return 0;
     }
     const what = source === "openclaw"
@@ -115,7 +115,7 @@ export async function runImport(args, flags = {}, io = {}) {
         : `${done.logs} daily logs and ${done.memories} preference memories`;
       log(local ? `Saved ${sent} to your local soul (${soulPath()}). Nothing left this machine.`
         : mode === "hybrid" ? `Saved ${sent} on this device; the types you sync were copied to the cloud too.`
-          : `Uploaded ${sent}. Open ${DASHBOARD_URL} to see them.`);
+          : `Uploaded ${sent}. Open ${dashboardUrl()} to see them.`);
       return 0;
     } catch (e) {
       err(`Upload stopped: [${e.code || "ERROR"}] ${e.message}\nRe-run the same command to resume — finished items are not sent twice.`);

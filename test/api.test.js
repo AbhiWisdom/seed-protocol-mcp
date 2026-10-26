@@ -27,7 +27,7 @@ test("NO_SOUL with a clear next step, not cached", async () => {
   const mock = await startMockApi({ soul: null });
   try {
     const api = createApi({ apiUrl: mock.url, apiKey: TEST_KEY });
-    await assert.rejects(api.seedId(), (e) => e.code === "NO_SOUL" && e.message === "No soul yet — create one at https://seed.abhibots.com/login");
+    await assert.rejects(api.seedId(), (e) => e.code === "NO_SOUL" && e.message === `No soul yet — create one at ${mock.url}/login`); // the dashboard of the API in use
     await assert.rejects(api.seedId(), (e) => e.code === "NO_SOUL");
     assert.equal(mock.requests.filter((r) => r.path === "/api/v1/me").length, 2);
   } finally {
@@ -37,7 +37,7 @@ test("NO_SOUL with a clear next step, not cached", async () => {
 
 test("NO_KEY without any request", async () => {
   const api = createApi({ apiUrl: "http://127.0.0.1:9", apiKey: "" });
-  await assert.rejects(api.seedId(), (e) => e.code === "NO_KEY" && /seed\.abhibots\.com\/login/.test(e.message));
+  await assert.rejects(api.seedId(), (e) => e.code === "NO_KEY" && /127\.0\.0\.1:9\/login/.test(e.message));
 });
 
 test("maps 401 / 404 / 410 / 429 / 5xx / validation detail", async () => {
@@ -59,7 +59,7 @@ test("maps 401 / 404 / 410 / 429 / 5xx / validation detail", async () => {
   try {
     const codeOf = async (p) => api.request(p).then(() => null, (e) => e);
     assert.equal((await codeOf("/401")).code, "UNAUTHORIZED");
-    assert.match((await codeOf("/401")).message, /seed\.abhibots\.com\/login/);
+    assert.match((await codeOf("/401")).message, /fresh key from http:\/\/127\.0\.0\.1:\d+\/login/);
     assert.equal((await codeOf("/404")).code, "NOT_FOUND");
     assert.equal((await codeOf("/410")).code, "GONE");
     const rl = await codeOf("/429");

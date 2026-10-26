@@ -19,7 +19,7 @@ export function registerMemoryTools(server, api) {
       description:
         "Saves a durable memory to the user's soul — a fact, preference, decision or piece of context that should survive across sessions and tools. Use when the user states something worth keeping ('I deploy with pm2', 'my sister is Priya'). Do not store secrets or chit-chat. Secrets are redacted automatically. Writes to the user's soul.",
       inputSchema: {
-        content: z.string().min(1).max(10000).describe("What to remember, as a standalone sentence"),
+        content: z.string().min(1).max(5000).describe("What to remember, as a standalone sentence (up to 5,000 characters)"),
         category: z.string().min(1).max(40).default("general").describe("general, preference, fact, project, person, emotion, skill"),
         importance: z.number().min(0).max(1).default(0.5).describe("0 (trivial) to 1 (critical)"),
       },

@@ -5,7 +5,7 @@
 
 import { existsSync, statSync } from "node:fs";
 import { createApi } from "./api.js";
-import { DASHBOARD_URL, VERSION, brainPath, maskKey, resolveAuth, seedMode } from "./config.js";
+import { dashboardUrl, VERSION, brainPath, maskKey, resolveAuth, seedMode } from "./config.js";
 import { openBrain } from "./brain/db.js";
 import { brainCounts } from "./brain/store.js";
 import { createLocalApi, soulPath } from "./local/store.js";
@@ -45,7 +45,7 @@ async function hybridStatus(flags, log) {
 async function onlineStatus(flags, log) {
   const auth = resolveAuth({ key: flags.key, url: flags.api, searchEditors: true });
   let exit = 0;
-  log(`  API key:     ${auth.apiKey ? `${maskKey(auth.apiKey)} (from ${auth.keySource})` : `missing — get one at ${DASHBOARD_URL}`}`);
+  log(`  API key:     ${auth.apiKey ? `${maskKey(auth.apiKey)} (from ${auth.keySource})` : `missing — get one at ${dashboardUrl()}`}`);
   log(`  API:         ${auth.apiUrl}`);
 
   if (auth.apiKey) {
@@ -54,7 +54,7 @@ async function onlineStatus(flags, log) {
       log("  Reachable:   yes");
       log(`  Account:     ${me.name || me.email || me.user_id} · ${me.plan || "free"} plan`);
       log(
-        `  Soul:        ${me.soul ? `${me.soul.name} (${me.soul.id}) · ${me.memories_count ?? 0} memories` : `none yet — create one at ${DASHBOARD_URL}`}`,
+        `  Soul:        ${me.soul ? `${me.soul.name} (${me.soul.id}) · ${me.memories_count ?? 0} memories` : `none yet — create one at ${dashboardUrl()}`}`,
       );
     } catch (err) {
       log(`  Reachable:   no — [${err.code || "ERROR"}] ${err.message}`);

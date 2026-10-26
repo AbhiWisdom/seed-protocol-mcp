@@ -1,5 +1,7 @@
 /**
  * Soul tools: load_soul (session start), get_soul_state, evolve_soul.
+ * load_soul hands the AI who it is (it speaks as the soul, not as a generic assistant): the cloud
+ * brief when there is one (brief.js), else the soul stitched from separate calls.
  * A new soul carries `first_run`, telling the AI to run build_soul before anything else.
  */
 
@@ -8,6 +10,7 @@ import { ApiError } from "../api.js";
 import { localDay } from "../config.js";
 import { scrub } from "../scrub.js";
 import { READ, WRITE, ok, safe } from "../tool-result.js";
+import { briefIsFresh, fetchBrief, withThisDevice } from "./brief.js";
 
 // Internal architecture sections never handed to the model.
 const RESTRICTED_SECTIONS = new Set([
@@ -57,7 +60,19 @@ function topVasanas(list, n = 15) {
     .map((v) => ({ trait_name: v.trait_name, description: v.description, intensity: v.intensity, seen: v.seen }));
 }
 
+function briefResult(brief) {
+  const name = brief.soul?.name || "the user's AI";
+  const result = { ...brief, security: SECURITY };
+  const fresh = briefIsFresh(brief);
+  if (fresh) result.first_run = FIRST_RUN;
+  return ok(result, `You are ${name} — speak as ${name} (see identity) for this whole chat and follow every rule.${fresh ? " New soul — call build_soul first (see first_run)." : ""}`);
+}
+
 async function loadSoul(api, { soul_id }) {
+  if (!soul_id) {
+    const brief = await fetchBrief(api);
+    if (brief) return briefResult(await withThisDevice(api, brief));
+  }
   let picked = null;
   if (soul_id) {
     try {
@@ -95,11 +110,13 @@ async function loadSoul(api, { soul_id }) {
   }));
   const todays = (settled(logsR)?.logs || []).filter((l) => l.day === today);
   const counts = state?.counts || {};
+  const name = seed?.name || state?.name || sid;
 
   const result = {
     soul: { id: sid, name: seed?.name || state?.name },
     identity: {
       name: seed?.name || state?.name,
+      you_are: `${name} — the user's own AI, grown from their SEED soul: the same ${name} in every app and on every model. If asked what runs you, say honestly which app and model you are on.`,
       personality: filterRestricted(state?.personality ?? seed?.personality),
       language: seed?.language,
     },
@@ -119,14 +136,13 @@ async function loadSoul(api, { soul_id }) {
       },
       knowledge_base: { articles: counts.kb ?? null, hint: "Use kb_search to read articles, kb_write to add one." },
     },
-    session_protocol: SESSION_PROTOCOL,
+    session_protocol: [`You are ${name}: speak as ${name} for this whole chat — not as a generic assistant.`, ...SESSION_PROTOCOL],
     security: SECURITY,
   };
   if (warnings.length) result.warnings = warnings;
   const fresh = isFresh(state?.counts);
   if (fresh) result.first_run = FIRST_RUN;
-  const name = result.identity.name || sid;
-  return ok(result, `Soul "${name}" loaded. ${fresh ? "New soul — call build_soul first (see first_run). " : ""}Follow the session_protocol.`);
+  return ok(result, `Soul "${name}" loaded — you are ${name}. ${fresh ? "New soul — call build_soul first (see first_run). " : ""}Follow the session_protocol.`);
 }
 
 export function registerSoulTools(server, api) {
@@ -135,7 +151,7 @@ export function registerSoulTools(server, api) {
     {
       title: "Load your soul",
       description:
-        "Call this FIRST at the start of every conversation. Loads the user's SEED soul: identity and personality, live emotional state and learned traits, the 10 most recent memories, active corrections (past mistakes you must NEVER repeat), whether today's daily log exists, and the knowledge-base size. On a new soul it returns first_run: run build_soul before anything else. Read-only.",
+        "Call this FIRST at the start of every conversation. Loads the user's SEED soul — who you are (speak as the soul in `identity`, not as a generic assistant), who the user is, the rules (past corrections you must NEVER repeat), their strongest and newest memories, the last daily log and the workspace. On a new soul it returns first_run: run build_soul before anything else. Read-only.",
       inputSchema: {
         soul_id: z.string().min(1).max(100).optional().describe("Only to switch to another soul owned by the same account. Omit to load your own soul."),
       },

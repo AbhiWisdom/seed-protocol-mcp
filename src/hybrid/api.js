@@ -89,11 +89,16 @@ export function createHybridApi({ local, cloud }) {
 
   return {
     hybrid: true,
+    remote: cloud, // workspace, search and reports live in the cloud soul only
     apiUrl: cloud.apiUrl,
     hasKey: () => cloud.hasKey(),
     seedId: () => cloud.seedId().catch(() => local.seedId()),
     useSeed: (id) => cloud.useSeed(id),
-    request: (path) => cloud.request(path),
+    setClient: (name) => { cloud.setClient(name); local.setClient(name); },
+    client: () => cloud.client(),
+    request: (path, opts) => cloud.request(path, opts),
+    /** This device's rows only (load_soul adds what the cloud has not got yet). */
+    localOnly: (suffix, query) => local.get(suffix, query),
     policy: getPolicy,
     pendingCounts: () => local.pendingCounts(),
     flush,

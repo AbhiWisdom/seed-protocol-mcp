@@ -8,7 +8,7 @@
 
 import { createHash, randomUUID } from "node:crypto";
 import { join } from "node:path";
-import { ApiError } from "../api.js";
+import { ApiError, clientLabel } from "../api.js";
 import { brainFileStamp, openBrain } from "../brain/db.js";
 import { localDay, seedHome } from "../config.js";
 
@@ -166,10 +166,14 @@ export function createLocalApi({ name = process.env.SEED_SOUL_NAME || "Your AI" 
     if (!fn) throw new ApiError("NOT_FOUND", `Local-only mode does not support ${suffix || "/"}.`);
     return fn;
   };
+  let client = "";
   return {
     local: true,
+    remote: null, // cloud-only tools answer LOCAL_MODE
     apiUrl: soulPath(),
     hasKey: () => true,
+    setClient: (name) => { client = clientLabel(name); },
+    client: () => client,
     seedId: async () => LOCAL_SOUL_ID,
     useSeed: () => {},
     request: async (path) => {

@@ -8,7 +8,7 @@
 import { existsSync, mkdirSync, readFileSync, realpathSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { DASHBOARD_URL, DEFAULT_API_URL, editorConfigPaths, saveConfig, seedHome } from "./config.js";
+import { dashboardUrl, DEFAULT_API_URL, editorConfigPaths, saveConfig, seedHome } from "./config.js";
 
 const SERVER_NAME = "seed-protocol";
 
@@ -43,7 +43,7 @@ const SETUP_USAGE = `Usage: npx seed-protocol-mcp setup YOUR_API_KEY
        npx seed-protocol-mcp setup --local    keep the soul on this machine only (no account, nothing sent)
        npx seed-protocol-mcp setup --hybrid YOUR_API_KEY   soul on this machine + sync what you choose
 
-Get your API key from your dashboard: ${DASHBOARD_URL}
+Get your API key from your dashboard: ${dashboardUrl()}
 Or set environment variable: SEED_API_KEY=your_key`;
 
 /**
@@ -104,7 +104,7 @@ function runHybridSetup(apiKey, log) {
   const { found, configured } = configureEditors(mcpConfig, log);
   saveConfig({ api_key: apiKey, api_url: DEFAULT_API_URL, mode: "hybrid" });
   log(`\n  Your soul lives in ${join(seedHome(), "soul.sqlite")}. What syncs to the cloud is your choice:`);
-  log(`  ${DASHBOARD_URL.replace("/login", "/dashboard?tab=privacy")} → Devices & sync. Push waiting items: npx seed-protocol-mcp sync`);
+  log(`  ${dashboardUrl().replace("/login", "/dashboard?tab=privacy")} → Devices & sync. Push waiting items: npx seed-protocol-mcp sync`);
   return finish(found, configured, mcpConfig, log, false);
 }
 

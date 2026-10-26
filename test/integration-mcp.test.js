@@ -11,7 +11,8 @@ import { ALL_FAKE_SECRETS, FAKE, claudeProjectsFixture } from "./helpers/fixture
 import { SOUL_ID, TEST_KEY, startMockApi } from "./helpers/mock-api.js";
 import { CLI, runCli, sandboxEnv } from "./helpers/run-cli.js";
 
-const EXPECTED_TOOLS = ["build_soul", "correct", "daily_log", "evolve_soul", "get_skills", "get_soul_state", "history_search", "kb_search", "kb_write", "load_soul", "recall", "remember"];
+const EXPECTED_TOOLS = ["build_soul", "correct", "daily_log", "evolve_soul", "get_skills", "get_soul_state", "history_search", "kb_search", "kb_write", "load_soul",
+  "my_reports", "recall", "remember", "search", "send_report", "ws_archive", "ws_mkdir", "ws_move", "ws_read", "ws_tree", "ws_write"];
 const today = () => {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
@@ -125,7 +126,7 @@ describe("MCP server over stdio", () => {
     assert.equal(mock.requests.filter((r) => r.path === "/api/v1/skills").length, 1);
   });
 
-  test("daily_log appends to today's mcp log, replace overwrites", async () => {
+  test("daily_log appends to today's log for this app (its MCP client name), replace overwrites", async () => {
     const a = await call(client, "daily_log", { summary: "Built the import CLI." });
     assert.equal(data(a).entries, 1);
     const b = await call(client, "daily_log", { summary: `Fixed tests. Token ${FAKE.SLACK_TOKEN}` });
@@ -133,7 +134,7 @@ describe("MCP server over stdio", () => {
     const posts = sent(mock, "POST", "/daily-logs");
     const last = posts.at(-1).body;
     assert.equal(last.day, today());
-    assert.equal(last.source, "mcp");
+    assert.equal(last.source, "seed-test"); // the client said hello as "seed-test"
     assert.equal(last.summary, "Built the import CLI.\n\n---\n\nFixed tests. Token [REDACTED:slack_token]");
     const get = sent(mock, "GET", "/daily-logs").at(-1);
     assert.ok(get.query.before > today());
@@ -142,7 +143,7 @@ describe("MCP server over stdio", () => {
     assert.equal(sent(mock, "POST", "/daily-logs").at(-1).body.summary, "Fresh summary.");
     const soul = await call(client, "load_soul");
     assert.equal(data(soul).context.daily_log.exists, true);
-    assert.deepEqual(data(soul).context.daily_log.sources, ["mcp"]);
+    assert.deepEqual(data(soul).context.daily_log.sources, ["seed-test"]);
   });
 
   test("kb_write scrubs, kb_search queries", async () => {
@@ -187,7 +188,7 @@ describe("MCP server edge cases", () => {
       clients.push(c1);
       const res = await call(c1, "load_soul");
       assert.equal(res.isError, true);
-      assert.equal(res.content[0].text, "Error [NO_SOUL]: No soul yet — create one at https://seed.abhibots.com/login");
+      assert.equal(res.content[0].text, `Error [NO_SOUL]: No soul yet — create one at ${mock.url}/login`);
 
       const c2 = await connect(sandboxEnv({ SEED_API_URL: mock.url }));
       clients.push(c2);

@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.9.1 — 2026-10-27
+
+Same code as 2.9.0. The 2.9.0 build was staged on npm (staged publishing) and could not be approved from the account without 2FA, so the identical build ships as 2.9.1. No changes.
+
 ## 2.9.0 — 2026-10-26
 
 **The AI is the soul — and it can work in your workspace.**

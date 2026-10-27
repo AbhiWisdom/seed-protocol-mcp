@@ -37,7 +37,7 @@
   "homepage": "https://seed.abhibots.com",
   "repository": {
     "type": "git",
-    "url": "https://github.com/AbhiWisdom/seed-protocol-mcp"
+    "url": "git+https://github.com/AbhiWisdom/seed-protocol-mcp.git"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.32.1",

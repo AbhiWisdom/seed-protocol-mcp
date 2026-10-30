@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.10.0 — 2026-10-30
+
+- **`projects` and `project_update`.** A project is the workspace folder `projects/<slug>/`; its README's front-matter (status, repo, live, hosting, stack, now) is the card on the dashboard's Projects tab. `project_update` merges fields and keeps the README's text (`about` replaces it). The slug is cleaned before it reaches a URL path, and every value is scrubbed. Same names as the remote MCP and the ChatGPT actions (listProjects / updateProject).
+- `load_soul` (the brief) now also carries the running projects.
+
 ## 2.9.1 — 2026-10-27
 
 Same code as 2.9.0. The 2.9.0 build was staged on npm (staged publishing) and could not be approved from the account without 2FA, so the identical build ships as 2.9.1. No changes.

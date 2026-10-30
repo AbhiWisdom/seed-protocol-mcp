@@ -10,7 +10,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync, chmodSync } from "n
 import { homedir, platform } from "node:os";
 import { dirname, join } from "node:path";
 
-export const VERSION = "2.9.1";
+export const VERSION = "2.10.0";
 export const DEFAULT_API_URL = "https://seed.abhibots.com";
 /** The public SEED dashboard (what 2.8 always printed); dashboardUrl() follows the API this install uses. */
 export const DASHBOARD_URL = `${DEFAULT_API_URL}/login`;

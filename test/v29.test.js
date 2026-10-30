@@ -73,6 +73,18 @@ describe("2.9 against the 2026-10 API", () => {
     assert.equal(seedReqs(mock, "DELETE", "/workspace").at(-1).query.path, "research/tiffin.md");
   });
 
+  test("projects (2.10): project_update merges a card — scrubbed, its slug cleaned before it reaches a path", async () => {
+    const u = await call(client, "project_update", { slug: "../Tiffin App", status: "active", repo: "riya/tiffin", now: `deploy with ${FAKE.SLACK_TOKEN}` });
+    assert.ok(!u.isError, u.content[0].text);
+    const req = seedReqs(mock, "PUT", "/projects/tiffin-app").at(-1);
+    assert.ok(req, "the PUT went to /projects/tiffin-app");
+    assert.match(req.body.now, /\[REDACTED:slack_token\]/);
+    assert.equal(req.body.slug, undefined);
+    const l = await call(client, "projects");
+    assert.ok(l.structuredContent.projects.some((p) => p.slug === "tiffin-app" && p.repo === "riya/tiffin"));
+    assert.equal((await call(client, "project_update", { slug: "---" })).isError, true);
+  });
+
   test("search asks the whole brain; send_report and my_reports reach the team", async () => {
     const s = await call(client, "search", { query: "deploy" });
     assert.equal(s.structuredContent.results[0].type, "memory");

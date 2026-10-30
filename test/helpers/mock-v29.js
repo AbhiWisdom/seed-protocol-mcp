@@ -27,9 +27,17 @@ export function meRoute(method, p, body, state, soul) {
 
 export function seedRoute(method, sub, query, body, state) {
   const ws = state.workspace;
+  state.projects ||= {};
+  if (method === "PUT" && sub.startsWith("/projects/")) {
+    const slug = decodeURIComponent(sub.slice("/projects/".length));
+    state.projects[slug] = { ...state.projects[slug], ...body, slug, status: body.status || state.projects[slug]?.status || "active" };
+    return [200, { slug, path: `projects/${slug}/README.md`, created: true, ...state.projects[slug] }];
+  }
   switch (`${method} ${sub}`) {
     case "GET /search":
       return [200, { query: query.q, results: [{ type: "memory", text: "User deploys with pm2", score: 1 }], counts: { memories: 1 } }];
+    case "GET /projects":
+      return [200, { projects: Object.values(state.projects) }];
     case "GET /workspace":
       return [200, { folders: [], files: Object.values(ws).map(({ path, version }) => ({ path, version })) }];
     case "GET /workspace/file":

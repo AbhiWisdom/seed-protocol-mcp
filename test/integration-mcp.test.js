@@ -12,7 +12,7 @@ import { SOUL_ID, TEST_KEY, startMockApi } from "./helpers/mock-api.js";
 import { CLI, runCli, sandboxEnv } from "./helpers/run-cli.js";
 
 const EXPECTED_TOOLS = ["build_soul", "correct", "daily_log", "evolve_soul", "get_skills", "get_soul_state", "history_search", "kb_search", "kb_write", "load_soul",
-  "my_reports", "recall", "remember", "search", "send_report", "ws_archive", "ws_mkdir", "ws_move", "ws_read", "ws_tree", "ws_write"];
+  "my_reports", "project_update", "projects", "recall", "remember", "search", "send_report", "ws_archive", "ws_mkdir", "ws_move", "ws_read", "ws_tree", "ws_write"];
 const today = () => {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;

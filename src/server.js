@@ -16,6 +16,7 @@ import { registerSearchTool } from "./features/search.js";
 import { registerSkillTools } from "./features/skills.js";
 import { registerSoulTools } from "./features/soul.js";
 import { registerWorkspaceTools } from "./features/workspace.js";
+import { registerProjectTools } from "./features/projects.js";
 import { soulPath } from "./local/store.js";
 import { createModeApi } from "./modeApi.js";
 
@@ -39,6 +40,7 @@ export function createServer(api) {
   registerHistoryTools(server);
   registerSearchTool(server, api);
   registerWorkspaceTools(server, api);
+  registerProjectTools(server, api);
   registerReportTools(server, api);
   registerBootstrapPrompt(server);
   // the client's own name ("Claude Code", "Cursor"…) → X-Seed-Client and the daily log's source

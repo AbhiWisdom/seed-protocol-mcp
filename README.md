@@ -92,6 +92,7 @@ Every tool works the same, but the soul lives in `~/.seed/soul.sqlite` on your m
 | `history_search` | Search your past AI sessions in the **local** brain — never calls the network |
 | `search` | One search across the whole soul — rules, memories, workspace documents and the sessions you brought into SEED (local-only mode: this machine's memories and notes) |
 | `ws_tree` · `ws_read` · `ws_write` · `ws_mkdir` · `ws_move` · `ws_archive` | Your workspace — Markdown documents in folders that you and your AIs grow together. Edits carry the version they read, so the AI never overwrites your own change; an AI never deletes, it archives |
+| `projects` · `project_update` | Your projects — each is the workspace folder `projects/<slug>/`, its README's front-matter (status, repo, live URL, stack, what's happening now) kept current by your AI. Shown on the dashboard's Projects tab |
 | `send_report` · `my_reports` | With your OK, tell the SEED team about a bug or an idea; their replies come back in `load_soul` |
 
 The workspace, `search` over the cloud and reports need online or hybrid mode; in local-only mode those tools say so.

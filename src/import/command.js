@@ -12,6 +12,7 @@ import { createModeApi } from "../modeApi.js";
 import { openBrain } from "../brain/db.js";
 import { SOURCES, prepare } from "./pipeline.js";
 import { soulPath } from "../local/store.js";
+import { proposeProjects, uploadProjects } from "./projects.js";
 import { askYesNo, planSize, runUpload } from "./upload.js";
 
 export const IMPORT_USAGE = `Usage: npx seed-protocol-mcp import <claude-code|cursor|openclaw> [options]
@@ -77,6 +78,13 @@ export async function runImport(args, flags = {}, io = {}) {
     log(`  Read from:    ${run.where}`);
     if (source === "openclaw") printOpenClawSummary(log, run);
     else printSessionSummary(log, run);
+    // claude-code: the git repos the sessions ran in → project cards (2.11.0, src/import/projects.js)
+    const projects = source === "claude-code" ? await proposeProjects(run.where) : [];
+    if (projects.length) {
+      log(`  Projects:     ${projects.length} git repos your sessions ran in (cards that already exist are left alone)`);
+      for (const p of projects.slice(0, 8)) log(`    - ${p.name}  (${p.repo}${p.stack ? ` · ${p.stack}` : ""})`);
+      if (projects.length > 8) log(`    …and ${projects.length - 8} more`);
+    }
     log(`  Local brain:  ${brainPath()} — raw history never leaves this machine.\n`);
 
     if (flags.localOnly) {
@@ -84,7 +92,7 @@ export async function runImport(args, flags = {}, io = {}) {
       return 0;
     }
     const { plan } = run;
-    if (!planSize(plan)) {
+    if (!planSize(plan) && !projects.length) {
       log("Your SEED dashboard is already up to date — nothing new to upload.");
       return 0;
     }
@@ -93,12 +101,13 @@ export async function runImport(args, flags = {}, io = {}) {
     const authOpts = { key: flags.key, url: flags.api, searchEditors: true };
     const auth = local ? null : resolveAuth(authOpts);
     if (!local && !auth.apiKey) {
-      log(`No SEED API key found, so nothing was uploaded.\nGet your key at ${dashboardUrl()}, run: npx seed-protocol-mcp setup <KEY>, then re-run this import.`);
+      log(`No SEED API key found, so nothing was uploaded.\nGet your key at ${dashboardUrl(flags.api)}, run: npx seed-protocol-mcp setup <KEY>, then re-run this import.`);
       return 0;
     }
     const what = source === "openclaw"
       ? `${plan.logs.length} daily logs, ${plan.memories.length} memories and ${plan.articles.length} knowledge articles`
-      : `${plan.logs.length} daily logs and ${plan.memories.length} preference memories`;
+      : `${plan.logs.length} daily logs and ${plan.memories.length} preference memories`
+        + (projects.length && !local ? ` (and up to ${projects.length} project cards)` : "");
     const question = local ? `Save ${what} to your local soul? (y/N)`
       : mode === "hybrid" ? `Save ${what} to your soul (this device, synced as set in your dashboard)? (y/N)`
         : `Upload ${what} to your SEED dashboard? (y/N)`;
@@ -109,13 +118,16 @@ export async function runImport(args, flags = {}, io = {}) {
       return 0;
     }
     try {
-      const done = await runUpload(createModeApi(authOpts).api, brain, source, plan, run.totals, { log });
+      const { api } = createModeApi(authOpts);
+      const done = await runUpload(api, brain, source, plan, run.totals, { log });
+      const cards = projects.length && !local ? await uploadProjects(api, projects) : 0;
+      if (cards) log(`Added ${cards} project card${cards === 1 ? "" : "s"} — see the Projects tab.`);
       const sent = source === "openclaw"
         ? `${done.logs} daily logs, ${done.memories} memories and ${done.articles} knowledge articles`
         : `${done.logs} daily logs and ${done.memories} preference memories`;
       log(local ? `Saved ${sent} to your local soul (${soulPath()}). Nothing left this machine.`
         : mode === "hybrid" ? `Saved ${sent} on this device; the types you sync were copied to the cloud too.`
-          : `Uploaded ${sent}. Open ${dashboardUrl()} to see them.`);
+          : `Uploaded ${sent}. Open ${dashboardUrl(flags.api)} to see them.`);
       return 0;
     } catch (e) {
       err(`Upload stopped: [${e.code || "ERROR"}] ${e.message}\nRe-run the same command to resume — finished items are not sent twice.`);

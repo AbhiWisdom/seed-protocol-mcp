@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.11.0 — 2026-10-30
+
+- **`import claude-code` proposes your projects.** It finds the git repos your sessions worked in — the folder a session ran in, and the files it read or edited in the last `--days` (many people run Claude Code from one home folder and work across repos) — and shows them in the preview with their repo and a stack guess (package.json, requirements.txt, pyproject.toml, go.mod, Cargo.toml). After your yes, each becomes a card on the Projects tab (active if a session touched it in the last 30 days, else paused). Existing cards are never overwritten; a repo touched only once or twice is left out. A remote URL loses any `user:token@` part before it is shown or sent.
+- The import's dashboard links follow `--api`.
+
 ## 2.10.0 — 2026-10-30
 
 - **`projects` and `project_update`.** A project is the workspace folder `projects/<slug>/`; its README's front-matter (status, repo, live, hosting, stack, now) is the card on the dashboard's Projects tab. `project_update` merges fields and keeps the README's text (`about` replaces it). The slug is cleaned before it reaches a URL path, and every value is scrubbed. Same names as the remote MCP and the ChatGPT actions (listProjects / updateProject).

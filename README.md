@@ -103,7 +103,7 @@ The workspace, `search` over the cloud and reports need online or hybrid mode; i
 
 ```bash
 npx seed-protocol-mcp setup <KEY>          # configure MCP clients + save key for the CLI
-npx seed-protocol-mcp import claude-code   # ~/.claude/projects/*/*.jsonl → local brain
+npx seed-protocol-mcp import claude-code   # ~/.claude/projects/*/*.jsonl → local brain (+ your git repos → Projects cards)
 npx seed-protocol-mcp import cursor        # Cursor state.vscdb → local brain (best effort)
 npx seed-protocol-mcp import openclaw      # OpenClaw workspace notes → daily logs, memories, articles
 npx seed-protocol-mcp status               # key, API reachability, soul, local brain counts
